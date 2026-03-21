@@ -12,3 +12,9 @@ export function getChallengeBySlug(
 ): ChallengeDefinition | undefined {
   return track1Challenges.find((c) => c.slug === slug);
 }
+
+export function getNextChallengeSlug(currentSlug: string): string | null {
+  const idx = track1Challenges.findIndex((c) => c.slug === currentSlug);
+  if (idx === -1 || idx >= track1Challenges.length - 1) return null;
+  return track1Challenges[idx + 1].slug;
+}

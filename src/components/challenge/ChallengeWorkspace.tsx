@@ -10,6 +10,8 @@ import { StepBreakdown } from "./StepBreakdown";
 import { StepMapToCode } from "./StepMapToCode";
 import { StepCodeEditor } from "./StepCodeEditor";
 import { StepVerify } from "./StepVerify";
+import { CompletionFlow } from "./CompletionFlow";
+import { getNextChallengeSlug } from "@/lib/challenges/track-1-fundamentals";
 
 interface ChallengeWorkspaceProps {
   challenge: ChallengeDefinition;
@@ -67,11 +69,13 @@ export function ChallengeWorkspace({ challenge }: ChallengeWorkspaceProps) {
     currentStep,
     stepDirection,
     completedSteps,
+    challengeCompleted,
     setChallenge,
     setCurrentStep,
     advanceToNextStep,
     completeStep,
     isStepAccessible,
+    setChallengeCompleted,
   } = useChallengeStore();
 
   const [leftPanePercent, setLeftPanePercent] = useState(40);
@@ -92,7 +96,10 @@ export function ChallengeWorkspace({ challenge }: ChallengeWorkspaceProps) {
 
   const handleAllTestsPassed = useCallback(() => {
     completeStep("verify");
-  }, [completeStep]);
+    setChallengeCompleted(true);
+  }, [completeStep, setChallengeCompleted]);
+
+  const nextChallengeSlug = getNextChallengeSlug(challenge.slug);
 
   const isOnWriteOrVerify = currentStep === "write" || currentStep === "verify";
 
@@ -145,10 +152,18 @@ export function ChallengeWorkspace({ challenge }: ChallengeWorkspaceProps) {
         );
       case "verify":
         return (
-          <StepVerify
-            testCases={challenge.testCases}
-            onAllPassed={handleAllTestsPassed}
-          />
+          <div className="space-y-6">
+            <StepVerify
+              testCases={challenge.testCases}
+              onAllPassed={handleAllTestsPassed}
+            />
+            {challengeCompleted && (
+              <CompletionFlow
+                challenge={challenge}
+                nextChallengeSlug={nextChallengeSlug}
+              />
+            )}
+          </div>
         );
       default:
         return null;

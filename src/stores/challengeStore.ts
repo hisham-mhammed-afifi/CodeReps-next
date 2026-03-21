@@ -16,6 +16,7 @@ interface ChallengeState {
   testErrorLine: number | null;
   isRunningTests: boolean;
   allTestsPassed: boolean;
+  challengeCompleted: boolean;
 
   setChallenge: (challenge: ChallengeDefinition) => void;
   setCurrentStep: (step: StepId) => void;
@@ -31,6 +32,7 @@ interface ChallengeState {
   clearTestResults: () => void;
   setIsRunningTests: (running: boolean) => void;
   setAllTestsPassed: (passed: boolean) => void;
+  setChallengeCompleted: (completed: boolean) => void;
   resetCode: () => void;
   markStepSubmitted: (step: StepId) => void;
   isStepSubmitted: (step: StepId) => boolean;
@@ -76,6 +78,7 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
   testErrorLine: null,
   isRunningTests: false,
   allTestsPassed: false,
+  challengeCompleted: false,
 
   setChallenge: (challenge) =>
     set({
@@ -99,6 +102,7 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
       testErrorLine: null,
       isRunningTests: false,
       allTestsPassed: false,
+      challengeCompleted: false,
     }),
 
   setCurrentStep: (step) => {
@@ -146,6 +150,8 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
   setIsRunningTests: (running) => set({ isRunningTests: running }),
 
   setAllTestsPassed: (passed) => set({ allTestsPassed: passed }),
+
+  setChallengeCompleted: (completed) => set({ challengeCompleted: completed }),
 
   resetCode: () => {
     const { challenge } = get();
@@ -195,5 +201,6 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
       testErrorLine: null,
       isRunningTests: false,
       allTestsPassed: false,
+      challengeCompleted: false,
     }),
 }));
