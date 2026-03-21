@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useRef, useState } from "react";
 import type { ChallengeDefinition } from "@/types/challenge";
+import type { ChallengeMode } from "@/types/progress";
 import { useChallengeStore } from "@/stores/challengeStore";
 import { useProgressStore } from "@/stores/progressStore";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -14,11 +15,13 @@ import { StepMapToCode } from "./StepMapToCode";
 import { StepCodeEditor } from "./StepCodeEditor";
 import { StepVerify } from "./StepVerify";
 import { CompletionFlow } from "./CompletionFlow";
+import { SemiGuidedWorkspace } from "./SemiGuidedWorkspace";
 import { ToastContainer } from "@/components/ui/toast";
 import { getNextChallengeSlug } from "@/lib/challenges/track-1-fundamentals";
 
 interface ChallengeWorkspaceProps {
   challenge: ChallengeDefinition;
+  mode?: ChallengeMode;
 }
 
 function DraggableDivider({
@@ -68,7 +71,15 @@ function DraggableDivider({
   );
 }
 
-export function ChallengeWorkspace({ challenge }: ChallengeWorkspaceProps) {
+export function ChallengeWorkspace({ challenge, mode = "guided" }: ChallengeWorkspaceProps) {
+  if (mode === "semi_guided") {
+    return <SemiGuidedWorkspace challenge={challenge} />;
+  }
+
+  return <GuidedWorkspace challenge={challenge} />;
+}
+
+function GuidedWorkspace({ challenge }: { challenge: ChallengeDefinition }) {
   const {
     currentStep,
     stepDirection,

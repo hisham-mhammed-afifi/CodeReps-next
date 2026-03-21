@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import type { StepId, ChallengeDefinition, TestResult } from "@/types/challenge";
-import type { UserProgress } from "@/types/progress";
+import type { ChallengeMode, UserProgress } from "@/types/progress";
 
 interface ChallengeState {
   challenge: ChallengeDefinition | null;
+  mode: ChallengeMode;
   currentStep: StepId;
   stepDirection: "forward" | "backward";
   completedSteps: Set<StepId>;
@@ -21,6 +22,7 @@ interface ChallengeState {
   attempts: number;
 
   setChallenge: (challenge: ChallengeDefinition, savedProgress?: UserProgress | null) => void;
+  setMode: (mode: ChallengeMode) => void;
   setCurrentStep: (step: StepId) => void;
   completeStep: (step: StepId) => void;
   isStepAccessible: (step: StepId) => boolean;
@@ -62,6 +64,7 @@ function isStepBefore(a: StepId, b: StepId): boolean {
 
 export const useChallengeStore = create<ChallengeState>((set, get) => ({
   challenge: null,
+  mode: "guided" as ChallengeMode,
   currentStep: "understand",
   stepDirection: "forward" as const,
   completedSteps: new Set<StepId>(),
@@ -157,6 +160,8 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
     }
   },
 
+  setMode: (mode) => set({ mode }),
+
   setCurrentStep: (step) => {
     const state = get();
     if (state.isStepAccessible(step)) {
@@ -236,6 +241,7 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
   reset: () =>
     set({
       challenge: null,
+      mode: "guided" as ChallengeMode,
       currentStep: "understand",
       stepDirection: "forward" as const,
       completedSteps: new Set<StepId>(),
