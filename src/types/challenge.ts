@@ -3,6 +3,18 @@ export interface TestCase {
   expected: string;
 }
 
+export interface TestResult {
+  input: string;
+  expected: string;
+  actual: string;
+  passed: boolean;
+}
+
+export type TestRunResult =
+  | { status: "success"; results: TestResult[] }
+  | { status: "error"; error: string; line?: number }
+  | { status: "timeout" };
+
 export interface ConceptOption {
   name: string;
   isCorrect: boolean;
@@ -39,7 +51,7 @@ export interface ChallengeDefinition {
   solutionCode: string;
   explanation: string;
   testCases: TestCase[];
-  patternUnlocked: PatternDefinition;
+  patternsUnlocked: PatternDefinition[];
 }
 
 export type StepId = "understand" | "breakdown" | "map" | "write" | "verify";

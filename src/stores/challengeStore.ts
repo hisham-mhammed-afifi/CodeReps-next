@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { StepId, ChallengeDefinition } from "@/types/challenge";
+import type { StepId, ChallengeDefinition, TestResult } from "@/types/challenge";
 
 interface ChallengeState {
   challenge: ChallengeDefinition | null;
@@ -10,6 +10,12 @@ interface ChallengeState {
   blockOrder: string[];
   selectedConcepts: Set<string>;
   stepSubmitted: Record<StepId, boolean>;
+  userCode: string;
+  testResults: TestResult[] | null;
+  testError: string | null;
+  testErrorLine: number | null;
+  isRunningTests: boolean;
+  allTestsPassed: boolean;
 
   setChallenge: (challenge: ChallengeDefinition) => void;
   setCurrentStep: (step: StepId) => void;
@@ -19,6 +25,13 @@ interface ChallengeState {
   setUserRephrasing: (text: string) => void;
   setBlockOrder: (order: string[]) => void;
   setSelectedConcepts: (concepts: Set<string>) => void;
+  setUserCode: (code: string) => void;
+  setTestResults: (results: TestResult[]) => void;
+  setTestError: (error: string, line?: number) => void;
+  clearTestResults: () => void;
+  setIsRunningTests: (running: boolean) => void;
+  setAllTestsPassed: (passed: boolean) => void;
+  resetCode: () => void;
   markStepSubmitted: (step: StepId) => void;
   isStepSubmitted: (step: StepId) => boolean;
   advanceToNextStep: () => void;
@@ -57,6 +70,12 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
     write: false,
     verify: false,
   },
+  userCode: "",
+  testResults: null,
+  testError: null,
+  testErrorLine: null,
+  isRunningTests: false,
+  allTestsPassed: false,
 
   setChallenge: (challenge) =>
     set({
@@ -74,6 +93,12 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
         write: false,
         verify: false,
       },
+      userCode: challenge.starterCode,
+      testResults: null,
+      testError: null,
+      testErrorLine: null,
+      isRunningTests: false,
+      allTestsPassed: false,
     }),
 
   setCurrentStep: (step) => {
@@ -110,6 +135,25 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
 
   setSelectedConcepts: (concepts) => set({ selectedConcepts: concepts }),
 
+  setUserCode: (code) => set({ userCode: code }),
+
+  setTestResults: (results) => set({ testResults: results, testError: null, testErrorLine: null }),
+
+  setTestError: (error, line) => set({ testError: error, testErrorLine: line ?? null, testResults: null }),
+
+  clearTestResults: () => set({ testResults: null, testError: null, testErrorLine: null }),
+
+  setIsRunningTests: (running) => set({ isRunningTests: running }),
+
+  setAllTestsPassed: (passed) => set({ allTestsPassed: passed }),
+
+  resetCode: () => {
+    const { challenge } = get();
+    if (challenge) {
+      set({ userCode: challenge.starterCode, testResults: null, testError: null, testErrorLine: null, allTestsPassed: false });
+    }
+  },
+
   markStepSubmitted: (step) =>
     set((state) => ({
       stepSubmitted: { ...state.stepSubmitted, [step]: true },
@@ -145,5 +189,11 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
         write: false,
         verify: false,
       },
+      userCode: "",
+      testResults: null,
+      testError: null,
+      testErrorLine: null,
+      isRunningTests: false,
+      allTestsPassed: false,
     }),
 }));

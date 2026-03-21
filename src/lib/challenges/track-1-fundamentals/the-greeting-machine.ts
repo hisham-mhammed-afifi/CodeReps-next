@@ -97,9 +97,11 @@ export const theGreetingMachine: ChallengeDefinition = {
       expected: '"Hello, ! Welcome aboard."',
     },
   ],
-  patternUnlocked: {
-    name: "Insert a value into text",
-    plainEnglish: "Use a template literal to embed a variable inside a string.",
-    codeExample: "`text ${variable} more text`",
-  },
+  patternsUnlocked: [
+    {
+      name: "Insert a value into text",
+      plainEnglish: "Use a template literal to embed a variable inside a string.",
+      codeExample: "`text ${variable} more text`",
+    },
+  ],
 };
