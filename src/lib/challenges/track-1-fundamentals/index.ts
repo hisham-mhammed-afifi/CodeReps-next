@@ -18,3 +18,7 @@ export function getNextChallengeSlug(currentSlug: string): string | null {
   if (idx === -1 || idx >= track1Challenges.length - 1) return null;
   return track1Challenges[idx + 1].slug;
 }
+
+export function getAllChallenges() {
+  return track1Challenges;
+}

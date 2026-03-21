@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { StepId, ChallengeDefinition, TestResult } from "@/types/challenge";
+import type { UserProgress } from "@/types/progress";
 
 interface ChallengeState {
   challenge: ChallengeDefinition | null;
@@ -17,8 +18,9 @@ interface ChallengeState {
   isRunningTests: boolean;
   allTestsPassed: boolean;
   challengeCompleted: boolean;
+  attempts: number;
 
-  setChallenge: (challenge: ChallengeDefinition) => void;
+  setChallenge: (challenge: ChallengeDefinition, savedProgress?: UserProgress | null) => void;
   setCurrentStep: (step: StepId) => void;
   completeStep: (step: StepId) => void;
   isStepAccessible: (step: StepId) => boolean;
@@ -36,6 +38,7 @@ interface ChallengeState {
   resetCode: () => void;
   markStepSubmitted: (step: StepId) => void;
   isStepSubmitted: (step: StepId) => boolean;
+  incrementAttempts: () => void;
   advanceToNextStep: () => void;
   reset: () => void;
 }
@@ -79,31 +82,80 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
   isRunningTests: false,
   allTestsPassed: false,
   challengeCompleted: false,
+  attempts: 0,
 
-  setChallenge: (challenge) =>
-    set({
-      challenge,
-      currentStep: "understand",
-      stepDirection: "forward" as const,
-      completedSteps: new Set<StepId>(),
-      userRephrasing: "",
-      blockOrder: [],
-      selectedConcepts: new Set<string>(),
-      stepSubmitted: {
+  setChallenge: (challenge, savedProgress) => {
+    if (savedProgress && savedProgress.status !== "not_started") {
+      const restoredSteps = new Set<StepId>(
+        (savedProgress.completedSteps ?? []).filter((s): s is StepId =>
+          STEP_ORDER.includes(s as StepId),
+        ),
+      );
+      const restoredStep =
+        savedProgress.lastStep &&
+        STEP_ORDER.includes(savedProgress.lastStep as StepId)
+          ? (savedProgress.lastStep as StepId)
+          : "understand";
+
+      // Build stepSubmitted from completed steps
+      const stepSubmitted: Record<StepId, boolean> = {
         understand: false,
         breakdown: false,
         map: false,
         write: false,
         verify: false,
-      },
-      userCode: challenge.starterCode,
-      testResults: null,
-      testError: null,
-      testErrorLine: null,
-      isRunningTests: false,
-      allTestsPassed: false,
-      challengeCompleted: false,
-    }),
+      };
+      for (const s of restoredSteps) {
+        stepSubmitted[s] = true;
+      }
+
+      const isCompleted = savedProgress.status === "completed";
+
+      set({
+        challenge,
+        currentStep: isCompleted ? "verify" : restoredStep,
+        stepDirection: "forward" as const,
+        completedSteps: restoredSteps,
+        userRephrasing: savedProgress.savedRephrasing ?? "",
+        blockOrder: savedProgress.savedBlockOrder ?? [],
+        selectedConcepts: new Set<string>(savedProgress.savedConcepts ?? []),
+        stepSubmitted,
+        userCode: savedProgress.userSolution ?? challenge.starterCode,
+        testResults: null,
+        testError: null,
+        testErrorLine: null,
+        isRunningTests: false,
+        allTestsPassed: isCompleted,
+        challengeCompleted: isCompleted,
+        attempts: savedProgress.attempts,
+      });
+    } else {
+      set({
+        challenge,
+        currentStep: "understand",
+        stepDirection: "forward" as const,
+        completedSteps: new Set<StepId>(),
+        userRephrasing: "",
+        blockOrder: [],
+        selectedConcepts: new Set<string>(),
+        stepSubmitted: {
+          understand: false,
+          breakdown: false,
+          map: false,
+          write: false,
+          verify: false,
+        },
+        userCode: challenge.starterCode,
+        testResults: null,
+        testError: null,
+        testErrorLine: null,
+        isRunningTests: false,
+        allTestsPassed: false,
+        challengeCompleted: false,
+        attempts: 0,
+      });
+    }
+  },
 
   setCurrentStep: (step) => {
     const state = get();
@@ -167,6 +219,8 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
 
   isStepSubmitted: (step) => get().stepSubmitted[step],
 
+  incrementAttempts: () => set((state) => ({ attempts: state.attempts + 1 })),
+
   advanceToNextStep: () => {
     const { currentStep, completedSteps } = get();
     const completed = new Set(completedSteps);
@@ -202,5 +256,6 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
       isRunningTests: false,
       allTestsPassed: false,
       challengeCompleted: false,
+      attempts: 0,
     }),
 }));

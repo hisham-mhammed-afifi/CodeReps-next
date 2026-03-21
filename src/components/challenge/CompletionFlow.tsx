@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { ArrowRight, LayoutGrid } from "lucide-react";
 import { motion } from "framer-motion";
 import { buttonVariants } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { PatternCard } from "./PatternCard";
 import { Confetti } from "./Confetti";
 import { ToastContainer } from "@/components/ui/toast";
 import { useToast } from "@/hooks/useToast";
+import { useProgressStore } from "@/stores/progressStore";
+import { useChallengeStore } from "@/stores/challengeStore";
 import type { ChallengeDefinition } from "@/types/challenge";
 
 interface CompletionFlowProps {
@@ -24,6 +26,16 @@ export function CompletionFlow({
   const [showConfetti, setShowConfetti] = useState(true);
   const { toasts, addToast, removeToast } = useToast();
   const [toastsTriggered, setToastsTriggered] = useState(false);
+  const persistedRef = useRef(false);
+
+  // Persist completion to progress store (once)
+  useEffect(() => {
+    if (persistedRef.current) return;
+    persistedRef.current = true;
+
+    const { userCode } = useChallengeStore.getState();
+    useProgressStore.getState().completeChallenge(challenge.slug, userCode);
+  }, [challenge.slug]);
 
   // Fire toast notifications for each pattern (once)
   const handleConfettiDismiss = useCallback(() => {

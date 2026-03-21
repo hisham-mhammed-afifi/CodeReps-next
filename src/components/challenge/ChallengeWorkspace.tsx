@@ -3,6 +3,9 @@
 import { useEffect, useCallback, useRef, useState } from "react";
 import type { ChallengeDefinition } from "@/types/challenge";
 import { useChallengeStore } from "@/stores/challengeStore";
+import { useProgressStore } from "@/stores/progressStore";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { useTimeTracker } from "@/hooks/useTimeTracker";
 import { StepIndicator } from "./StepIndicator";
 import { StepTransition } from "./StepTransition";
 import { StepUnderstand } from "./StepUnderstand";
@@ -11,6 +14,7 @@ import { StepMapToCode } from "./StepMapToCode";
 import { StepCodeEditor } from "./StepCodeEditor";
 import { StepVerify } from "./StepVerify";
 import { CompletionFlow } from "./CompletionFlow";
+import { ToastContainer } from "@/components/ui/toast";
 import { getNextChallengeSlug } from "@/lib/challenges/track-1-fundamentals";
 
 interface ChallengeWorkspaceProps {
@@ -78,12 +82,30 @@ export function ChallengeWorkspace({ challenge }: ChallengeWorkspaceProps) {
     setChallengeCompleted,
   } = useChallengeStore();
 
+  const { hydrate, getProgress, initProgress, addTime } = useProgressStore();
+  const { toasts, removeToast } = useAutoSave(challenge.slug);
+
   const [leftPanePercent, setLeftPanePercent] = useState(40);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Hydrate progress store and restore saved progress
   useEffect(() => {
-    setChallenge(challenge);
-  }, [challenge, setChallenge]);
+    hydrate();
+    const saved = getProgress(challenge.slug);
+    setChallenge(challenge, saved);
+    initProgress(challenge.slug);
+  }, [challenge, setChallenge, hydrate, getProgress, initProgress]);
+
+  // Track time spent on this challenge
+  useTimeTracker(
+    !challengeCompleted,
+    useCallback(
+      (seconds: number) => {
+        addTime(challenge.slug, seconds);
+      },
+      [challenge.slug, addTime],
+    ),
+  );
 
   const handleDividerDrag = useCallback((deltaX: number) => {
     if (!containerRef.current) return;
@@ -172,6 +194,8 @@ export function ChallengeWorkspace({ challenge }: ChallengeWorkspaceProps) {
 
   return (
     <div className="flex flex-col h-full">
+      <ToastContainer toasts={toasts} onDismiss={removeToast} />
+
       <div className="border-b border-border bg-card px-4 py-3 sm:px-6">
         <div className="mb-3">
           <h1 className="text-xl font-bold text-foreground">
