@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Code, Eye } from "lucide-react";
+import Editor from "@monaco-editor/react";
 import { Button } from "@/components/ui/button";
 import { useChallengeStore } from "@/stores/challengeStore";
 
@@ -52,6 +53,14 @@ export function LivePreviewPanel({
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [showTooltip, setShowTooltip] = useState(isFirstChallenge);
+  const [sourceKey, setSourceKey] = useState(starterHTML);
+  const [showSource, setShowSource] = useState(false);
+
+  // Reset to rendered preview when challenge changes
+  if (sourceKey !== starterHTML) {
+    setSourceKey(starterHTML);
+    setShowSource(false);
+  }
 
   // The HTML to render: either the post-execution result or the starter
   const displayHTML = previewHTML ?? starterHTML;
@@ -71,6 +80,19 @@ export function LivePreviewPanel({
     setShowTooltip(false);
   }, []);
 
+  const handleToggleSource = useCallback(() => {
+    setShowSource((prev) => {
+      const newView = !prev;
+      // Analytics event: preview_html_toggled
+      if (typeof window !== "undefined") {
+        console.debug("[analytics] preview_html_toggled", {
+          new_view: newView ? "source" : "preview",
+        });
+      }
+      return newView;
+    });
+  }, []);
+
   return (
     <div
       className="flex flex-col border-t border-brand-slate-400/30 min-h-[150px] lg:min-h-[200px]"
@@ -82,16 +104,34 @@ export function LivePreviewPanel({
         <span className="text-sm font-semibold text-brand-slate-600">
           Preview
         </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleRefresh}
-          className="text-brand-slate-400 hover:text-brand-slate-600 gap-1.5 h-7 px-2"
-          aria-label="Refresh preview to starter HTML"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleToggleSource}
+            className={`gap-1.5 h-7 px-2 ${showSource ? "text-brand-indigo hover:text-brand-indigo/80" : "text-brand-slate-400 hover:text-brand-slate-600"}`}
+            aria-pressed={showSource}
+            aria-label={showSource ? "Switch to rendered preview" : "View HTML source"}
+          >
+            {showSource ? <Eye className="h-3.5 w-3.5" /> : <Code className="h-3.5 w-3.5" />}
+            {showSource ? "View Preview" : "View HTML"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            className="text-brand-slate-400 hover:text-brand-slate-600 gap-1.5 h-7 px-2"
+            aria-label="Refresh preview to starter HTML"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {/* Screen reader announcement for toggle */}
+      <div aria-live="polite" className="sr-only">
+        {showSource ? "Showing HTML source" : "Showing rendered preview"}
       </div>
 
       {/* First-time tooltip for Challenge 1 */}
@@ -115,16 +155,42 @@ export function LivePreviewPanel({
         </div>
       )}
 
-      {/* Sandboxed iframe */}
-      <div className="flex-1 bg-[#FAFAFA]">
-        <iframe
-          ref={iframeRef}
-          title="Live preview of your code output"
-          sandbox="allow-scripts"
-          className="w-full h-full border-0"
-          style={{ minHeight: 120 }}
-        />
-      </div>
+      {/* Content: either rendered preview or HTML source */}
+      {showSource ? (
+        <div className="flex-1 min-h-[120px]">
+          <Editor
+            defaultLanguage="html"
+            value={starterHTML}
+            theme="vs-dark"
+            options={{
+              readOnly: true,
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 14,
+              lineHeight: 22,
+              minimap: { enabled: false },
+              scrollBeyondLastLine: false,
+              padding: { top: 16, bottom: 16 },
+              automaticLayout: true,
+              wordWrap: "on",
+              overviewRulerLanes: 0,
+              hideCursorInOverviewRuler: true,
+              renderLineHighlight: "none",
+              domReadOnly: true,
+              accessibilitySupport: "on",
+            }}
+          />
+        </div>
+      ) : (
+        <div className="flex-1 bg-[#FAFAFA]">
+          <iframe
+            ref={iframeRef}
+            title="Live preview of your code output"
+            sandbox="allow-scripts"
+            className="w-full h-full border-0"
+            style={{ minHeight: 120 }}
+          />
+        </div>
+      )}
     </div>
   );
 }
