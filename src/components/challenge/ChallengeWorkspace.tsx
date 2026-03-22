@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef, useState } from "react";
+import { useEffect, useCallback, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ChallengeDefinition } from "@/types/challenge";
 import type { ChallengeMode } from "@/types/progress";
@@ -8,6 +8,12 @@ import { useChallengeStore } from "@/stores/challengeStore";
 import { useProgressStore } from "@/stores/progressStore";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useTimeTracker } from "@/hooks/useTimeTracker";
+import {
+  getAvailableModes,
+  enforceMode,
+  shouldShowModePrompt,
+  shouldEncourageIndependent,
+} from "@/lib/challenges/mode-rules";
 import { StepIndicator } from "./StepIndicator";
 import { StepTransition } from "./StepTransition";
 import { StepUnderstand } from "./StepUnderstand";
@@ -19,12 +25,13 @@ import { CompletionFlow } from "./CompletionFlow";
 import { SemiGuidedWorkspace } from "./SemiGuidedWorkspace";
 import { IndependentWorkspace } from "./IndependentWorkspace";
 import { ModeSelector } from "./ModeSelector";
+import { ModePrompt } from "./ModePrompt";
 import { ToastContainer } from "@/components/ui/toast";
 import { getNextChallengeSlug } from "@/lib/challenges/track-1-fundamentals";
 
 interface ChallengeWorkspaceProps {
   challenge: ChallengeDefinition;
-  mode?: ChallengeMode;
+  requestedMode?: ChallengeMode;
 }
 
 function DraggableDivider({
@@ -74,19 +81,133 @@ function DraggableDivider({
   );
 }
 
-export function ChallengeWorkspace({ challenge, mode = "guided" }: ChallengeWorkspaceProps) {
+export function ChallengeWorkspace({
+  challenge,
+  requestedMode,
+}: ChallengeWorkspaceProps) {
+  const hydrate = useProgressStore((s) => s.hydrate);
+  const hydrated = useProgressStore((s) => s.hydrated);
+  const isTrackCompleted = useProgressStore((s) => s.isTrackCompleted);
+  const isFirstAttempt = useProgressStore((s) => s.isFirstAttempt);
+
+  // User-selected mode from the prompt (null = not yet chosen)
+  const [userSelectedMode, setUserSelectedMode] = useState<ChallengeMode | null>(null);
+
+  // Hydrate progress store on mount
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  // Derive mode context from store state (no setState in effects)
+  const trackCompleted = hydrated ? isTrackCompleted() : false;
+  const firstAttempt = hydrated ? isFirstAttempt(challenge.slug) : true;
+
+  const availableModes = useMemo(
+    () => getAvailableModes(challenge.order, trackCompleted, firstAttempt),
+    [challenge.order, trackCompleted, firstAttempt],
+  );
+
+  const encourageIndependent = useMemo(
+    () => shouldEncourageIndependent(challenge.order, trackCompleted),
+    [challenge.order, trackCompleted],
+  );
+
+  const needsPrompt = useMemo(
+    () => shouldShowModePrompt(challenge.order, trackCompleted, firstAttempt),
+    [challenge.order, trackCompleted, firstAttempt],
+  );
+
+  // Determine the active mode: user selection > URL request > auto
+  const activeMode = useMemo<ChallengeMode | null>(() => {
+    if (!hydrated) return null;
+
+    // If user already picked a mode from the prompt, use it
+    if (userSelectedMode) return userSelectedMode;
+
+    // If a mode was requested via URL, enforce it
+    if (requestedMode) {
+      return enforceMode(requestedMode, challenge.order, trackCompleted, firstAttempt);
+    }
+
+    // Single available mode — use it directly
+    if (availableModes.length === 1) return availableModes[0];
+
+    // Multiple modes, no URL mode, no user selection yet — show prompt
+    if (needsPrompt) return null;
+
+    return "guided";
+  }, [hydrated, userSelectedMode, requestedMode, challenge.order, trackCompleted, firstAttempt, availableModes, needsPrompt]);
+
+  const handlePromptSelect = useCallback(
+    (mode: ChallengeMode) => {
+      setUserSelectedMode(mode);
+    },
+    [],
+  );
+
+  // Loading state while hydrating
+  if (!hydrated) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  // Mode selection prompt (activeMode is null when prompt is needed)
+  if (activeMode === null) {
+    return (
+      <ModePrompt
+        challengeTitle={challenge.title}
+        availableModes={availableModes}
+        encourageIndependent={encourageIndependent}
+        onSelect={handlePromptSelect}
+      />
+    );
+  }
+
+  const mode = activeMode;
+
   if (mode === "independent") {
-    return <IndependentWorkspace challenge={challenge} />;
+    return (
+      <IndependentWorkspace
+        challenge={challenge}
+        availableModes={availableModes}
+        encourageIndependent={encourageIndependent}
+      />
+    );
   }
 
   if (mode === "semi_guided") {
-    return <SemiGuidedWorkspace challenge={challenge} />;
+    return (
+      <SemiGuidedWorkspace
+        challenge={challenge}
+        availableModes={availableModes}
+        encourageIndependent={encourageIndependent}
+      />
+    );
   }
 
-  return <GuidedWorkspace challenge={challenge} />;
+  return (
+    <GuidedWorkspace
+      challenge={challenge}
+      availableModes={availableModes}
+      encourageIndependent={encourageIndependent}
+    />
+  );
 }
 
-function GuidedWorkspace({ challenge }: { challenge: ChallengeDefinition }) {
+interface GuidedWorkspaceProps {
+  challenge: ChallengeDefinition;
+  availableModes: ChallengeMode[];
+  encourageIndependent: boolean;
+}
+
+function GuidedWorkspace({
+  challenge,
+  availableModes,
+  encourageIndependent,
+}: GuidedWorkspaceProps) {
   const {
     currentStep,
     stepDirection,
@@ -243,7 +364,12 @@ function GuidedWorkspace({ challenge }: { challenge: ChallengeDefinition }) {
               {challenge.difficulty} &middot; ~{challenge.estimatedMinutes} min
             </p>
           </div>
-          <ModeSelector currentMode="guided" onModeChange={handleModeChange} />
+          <ModeSelector
+            currentMode="guided"
+            onModeChange={handleModeChange}
+            availableModes={availableModes}
+            encourageIndependent={encourageIndependent}
+          />
         </div>
         <StepIndicator
           currentStep={currentStep}

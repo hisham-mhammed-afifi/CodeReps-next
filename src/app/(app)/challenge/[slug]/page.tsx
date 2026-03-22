@@ -23,14 +23,18 @@ export default async function ChallengePage({
     notFound();
   }
 
-  const mode: ChallengeMode =
+  // Parse the requested mode from the URL (if any)
+  const requestedMode: ChallengeMode | undefined =
     typeof modeParam === "string" && VALID_MODES.includes(modeParam as ChallengeMode)
       ? (modeParam as ChallengeMode)
-      : "guided";
+      : undefined;
 
   return (
     <div className="flex flex-col h-screen">
-      <ChallengeWorkspace challenge={challenge} mode={mode} />
+      <ChallengeWorkspace
+        challenge={challenge}
+        requestedMode={requestedMode}
+      />
     </div>
   );
 }

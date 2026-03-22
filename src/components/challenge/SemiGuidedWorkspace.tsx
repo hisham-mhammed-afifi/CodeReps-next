@@ -19,6 +19,8 @@ import { getNextChallengeSlug } from "@/lib/challenges/track-1-fundamentals";
 
 interface SemiGuidedWorkspaceProps {
   challenge: ChallengeDefinition;
+  availableModes?: ChallengeMode[];
+  encourageIndependent?: boolean;
 }
 
 /** Strip guiding comments from starter code, keeping only the function signature. */
@@ -29,7 +31,11 @@ function getFunctionSignature(starterCode: string): string {
     .join("\n");
 }
 
-export function SemiGuidedWorkspace({ challenge }: SemiGuidedWorkspaceProps) {
+export function SemiGuidedWorkspace({
+  challenge,
+  availableModes,
+  encourageIndependent,
+}: SemiGuidedWorkspaceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -120,7 +126,12 @@ export function SemiGuidedWorkspace({ challenge }: SemiGuidedWorkspaceProps) {
             <span className="text-brand-indigo font-medium">Semi-Guided</span>
           </p>
         </div>
-        <ModeSelector currentMode="semi_guided" onModeChange={handleModeChange} />
+        <ModeSelector
+          currentMode="semi_guided"
+          onModeChange={handleModeChange}
+          availableModes={availableModes}
+          encourageIndependent={encourageIndependent}
+        />
       </div>
 
       <div

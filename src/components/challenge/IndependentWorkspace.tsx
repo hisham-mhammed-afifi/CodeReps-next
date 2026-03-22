@@ -17,6 +17,8 @@ import type { ChallengeMode } from "@/types/progress";
 
 interface IndependentWorkspaceProps {
   challenge: ChallengeDefinition;
+  availableModes?: ChallengeMode[];
+  encourageIndependent?: boolean;
 }
 
 /** Strip all guiding comments, keeping only the function signature with an empty body. */
@@ -27,7 +29,11 @@ function getFunctionSignature(starterCode: string): string {
     .join("\n");
 }
 
-export function IndependentWorkspace({ challenge }: IndependentWorkspaceProps) {
+export function IndependentWorkspace({
+  challenge,
+  availableModes,
+  encourageIndependent,
+}: IndependentWorkspaceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -125,7 +131,12 @@ export function IndependentWorkspace({ challenge }: IndependentWorkspaceProps) {
             <span className="text-brand-indigo font-medium">Independent</span>
           </p>
         </div>
-        <ModeSelector currentMode="independent" onModeChange={handleModeChange} />
+        <ModeSelector
+          currentMode="independent"
+          onModeChange={handleModeChange}
+          availableModes={availableModes}
+          encourageIndependent={encourageIndependent}
+        />
       </div>
 
       <div
