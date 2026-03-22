@@ -16,6 +16,7 @@ import { SemiGuidedHintContent } from "./SemiGuidedHintContent";
 import { ModeSelector } from "./ModeSelector";
 import { ToastContainer } from "@/components/ui/toast";
 import { getNextChallengeSlug } from "@/lib/challenges/track-1-fundamentals";
+import { LivePreviewPanel } from "./LivePreviewPanel";
 
 interface SemiGuidedWorkspaceProps {
   challenge: ChallengeDefinition;
@@ -200,18 +201,31 @@ export function SemiGuidedWorkspace({
           <div className="h-8 w-0.5 rounded-full bg-brand-slate-400/40" />
         </div>
 
-        {/* Main content: editor + verify */}
+        {/* Main content: editor + preview + verify */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Code editor */}
-          <div className="flex-1 flex flex-col bg-brand-navy overflow-hidden min-h-[200px] lg:min-h-0">
+          <div className={`${challenge.requiresPreview ? "flex-[6]" : "flex-1"} flex flex-col bg-brand-navy overflow-hidden min-h-[200px] lg:min-h-0`}>
             <StepCodeEditor starterCode={semiGuidedStarterCode} />
           </div>
+
+          {/* Live Preview Panel (Track 2+) */}
+          {challenge.requiresPreview && challenge.starterHTML && (
+            <div className="flex-[4] overflow-hidden">
+              <LivePreviewPanel
+                starterHTML={challenge.starterHTML}
+                starterCSS={challenge.starterCSS}
+                isFirstChallenge={challenge.order === 1}
+              />
+            </div>
+          )}
 
           {/* Verify section */}
           <div className="border-t border-border bg-card p-4 overflow-y-auto max-h-[40%]">
             <StepVerify
               testCases={challenge.testCases}
               onAllPassed={handleAllTestsPassed}
+              starterHTML={challenge.starterHTML}
+              starterCSS={challenge.starterCSS}
             />
             {challengeCompleted && (
               <div className="mt-4">

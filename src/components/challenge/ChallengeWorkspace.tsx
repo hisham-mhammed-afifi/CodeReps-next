@@ -28,6 +28,7 @@ import { ModeSelector } from "./ModeSelector";
 import { ModePrompt } from "./ModePrompt";
 import { ToastContainer } from "@/components/ui/toast";
 import { getNextChallengeSlug } from "@/lib/challenges/track-1-fundamentals";
+import { LivePreviewPanel } from "./LivePreviewPanel";
 
 interface ChallengeWorkspaceProps {
   challenge: ChallengeDefinition;
@@ -336,6 +337,8 @@ function GuidedWorkspace({
             <StepVerify
               testCases={challenge.testCases}
               onAllPassed={handleAllTestsPassed}
+              starterHTML={challenge.starterHTML}
+              starterCSS={challenge.starterCSS}
             />
             {challengeCompleted && (
               <CompletionFlow
@@ -400,18 +403,29 @@ function GuidedWorkspace({
         {/* Draggable divider - desktop only */}
         <DraggableDivider onDrag={handleDividerDrag} />
 
-        {/* Code editor pane */}
-        <div className="flex-1 flex flex-col bg-brand-navy overflow-hidden min-h-[200px] lg:min-h-0">
-          {isOnWriteOrVerify ? (
-            <StepCodeEditor starterCode={challenge.starterCode} />
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-brand-slate-400 p-8">
-              <div className="text-center space-y-2">
-                <p className="font-mono text-sm">Code editor</p>
-                <p className="text-xs text-brand-slate-400/60">
-                  Available after completing Steps 1-3
-                </p>
+        {/* Code editor pane + optional preview */}
+        <div className="flex-1 flex flex-col overflow-hidden min-h-[200px] lg:min-h-0">
+          <div className={`${challenge.requiresPreview ? "flex-[6]" : "flex-1"} flex flex-col bg-brand-navy overflow-hidden`}>
+            {isOnWriteOrVerify ? (
+              <StepCodeEditor starterCode={challenge.starterCode} />
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-brand-slate-400 p-8">
+                <div className="text-center space-y-2">
+                  <p className="font-mono text-sm">Code editor</p>
+                  <p className="text-xs text-brand-slate-400/60">
+                    Available after completing Steps 1-3
+                  </p>
+                </div>
               </div>
+            )}
+          </div>
+          {challenge.requiresPreview && challenge.starterHTML && (
+            <div className="flex-[4] overflow-hidden">
+              <LivePreviewPanel
+                starterHTML={challenge.starterHTML}
+                starterCSS={challenge.starterCSS}
+                isFirstChallenge={challenge.order === 1}
+              />
             </div>
           )}
         </div>

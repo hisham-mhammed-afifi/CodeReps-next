@@ -10,9 +10,13 @@ import type { TestCase } from "@/types/challenge";
 interface StepVerifyProps {
   testCases: TestCase[];
   onAllPassed: () => void;
+  /** Track 2+: Starter HTML for DOM sandbox execution */
+  starterHTML?: string;
+  /** Track 2+: CSS for DOM sandbox execution */
+  starterCSS?: string;
 }
 
-export function StepVerify({ testCases, onAllPassed }: StepVerifyProps) {
+export function StepVerify({ testCases, onAllPassed, starterHTML, starterCSS }: StepVerifyProps) {
   const {
     userCode,
     testResults,
@@ -25,13 +29,16 @@ export function StepVerify({ testCases, onAllPassed }: StepVerifyProps) {
     clearTestResults,
     setIsRunningTests,
     setAllTestsPassed,
+    setPreviewHTML,
+    resetPreview,
   } = useChallengeStore();
 
   const handleRunTests = useCallback(async () => {
     clearTestResults();
     setIsRunningTests(true);
 
-    const result = await runTests(userCode, testCases);
+    const options = starterHTML ? { starterHTML, starterCSS } : undefined;
+    const result = await runTests(userCode, testCases, options);
 
     setIsRunningTests(false);
 
@@ -40,17 +47,25 @@ export function StepVerify({ testCases, onAllPassed }: StepVerifyProps) {
         setTestResults(result.results);
         const passed = result.results.every((r) => r.passed);
         setAllTestsPassed(passed);
+        // Update preview with post-execution DOM (Track 2+)
+        if (result.resultHTML) {
+          setPreviewHTML(result.resultHTML);
+        }
         if (passed) onAllPassed();
         break;
       }
       case "error":
         setTestError(result.error, result.line);
+        // Revert preview to starter HTML on error (Track 2+)
+        if (starterHTML) resetPreview();
         break;
       case "timeout":
         setTestError("Your code took too long. Check for infinite loops.");
+        // Revert preview on timeout too
+        if (starterHTML) resetPreview();
         break;
     }
-  }, [userCode, testCases, clearTestResults, setIsRunningTests, setTestResults, setTestError, setAllTestsPassed, onAllPassed]);
+  }, [userCode, testCases, starterHTML, starterCSS, clearTestResults, setIsRunningTests, setTestResults, setTestError, setAllTestsPassed, setPreviewHTML, resetPreview, onAllPassed]);
 
   const passedCount = testResults?.filter((r) => r.passed).length ?? 0;
   const totalCount = testResults?.length ?? testCases.length;
