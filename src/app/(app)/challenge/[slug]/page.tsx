@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getChallengeBySlug } from "@/lib/challenges/track-1-fundamentals";
+import { getTrack2ChallengeBySlug } from "@/lib/challenges/dom-manipulation";
 import { ChallengeWorkspace } from "@/components/challenge/ChallengeWorkspace";
 import type { ChallengeMode } from "@/types/progress";
 
@@ -17,7 +18,7 @@ export default async function ChallengePage({
   const { slug } = await params;
   const { mode: modeParam } = await searchParams;
 
-  const challenge = getChallengeBySlug(slug);
+  const challenge = getChallengeBySlug(slug) ?? getTrack2ChallengeBySlug(slug);
 
   if (!challenge) {
     notFound();
