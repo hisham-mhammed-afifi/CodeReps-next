@@ -20,6 +20,7 @@ interface ProgressState {
   getCompletedCount: () => number;
   getCompletedSlugs: () => string[];
   getTotalTimeSpent: () => number;
+  getTotalAttempts: () => number;
   isTrackCompleted: () => boolean;
   isFirstAttempt: (slug: string) => boolean;
   hasStartedTrack: () => boolean;
@@ -123,6 +124,13 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   getTotalTimeSpent: () => {
     return Object.values(get().challenges).reduce(
       (total, p) => total + p.timeSpentSeconds,
+      0,
+    );
+  },
+
+  getTotalAttempts: () => {
+    return Object.values(get().challenges).reduce(
+      (total, p) => total + p.attempts,
       0,
     );
   },
@@ -249,7 +257,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       [slug]: {
         ...current,
         status: "completed",
-        completedAt: new Date().toISOString(),
+        completedAt: current.completedAt ?? new Date().toISOString(),
         userSolution: code,
         completedSteps: [
           "understand",

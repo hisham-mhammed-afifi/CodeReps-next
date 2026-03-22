@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { ArrowRight, LayoutGrid } from "lucide-react";
+import { ArrowRight, LayoutGrid, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,7 @@ export function CompletionFlow({
   const { toasts, addToast, removeToast } = useToast();
   const [toastsTriggered, setToastsTriggered] = useState(false);
   const persistedRef = useRef(false);
+  const isTrackComplete = useProgressStore((s) => s.isTrackCompleted);
 
   // Persist completion to progress store (once)
   useEffect(() => {
@@ -82,7 +83,18 @@ export function CompletionFlow({
           transition={{ delay: 0.8 + challenge.patternsUnlocked.length * 0.3 }}
           className="flex flex-wrap items-center gap-3 pt-2"
         >
-          {nextChallengeSlug && (
+          {!nextChallengeSlug && isTrackComplete() ? (
+            <a
+              href="/track-complete"
+              className={cn(
+                buttonVariants({ variant: "default" }),
+                "gap-2 bg-brand-emerald hover:bg-brand-emerald/90",
+              )}
+            >
+              <Trophy className="h-4 w-4" />
+              View Track Completion
+            </a>
+          ) : nextChallengeSlug ? (
             <a
               href={`/challenge/${nextChallengeSlug}`}
               className={cn(
@@ -93,7 +105,7 @@ export function CompletionFlow({
               Next Challenge
               <ArrowRight className="h-4 w-4" />
             </a>
-          )}
+          ) : null}
           <a
             href="/dashboard"
             className={cn(buttonVariants({ variant: "outline" }), "gap-2")}

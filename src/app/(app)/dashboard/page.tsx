@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
+import { Trophy } from "lucide-react";
 import { getAllChallenges } from "@/lib/challenges/track-1-fundamentals";
 import { getAllPatterns, TOTAL_PATTERNS } from "@/lib/challenges/patterns";
 import { useProgressStore } from "@/stores/progressStore";
@@ -23,6 +25,7 @@ export default function DashboardPage() {
     getTotalTimeSpent,
     getProgress,
     hasStartedTrack,
+    isTrackCompleted,
   } = useProgressStore();
 
   useEffect(() => {
@@ -90,6 +93,25 @@ export default function DashboardPage() {
         completedCount={completedCount}
         totalCount={challenges.length}
       />
+
+      {isTrackCompleted() && (
+        <Link
+          href="/track-complete"
+          className="mt-6 flex items-center gap-3 rounded-xl border border-brand-emerald/30 bg-brand-emerald/5 p-4 transition-colors hover:bg-brand-emerald/10"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-emerald/10">
+            <Trophy className="h-5 w-5 text-brand-emerald" aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground">
+              Track 1 Complete!
+            </p>
+            <p className="text-xs text-muted-foreground">
+              View your completion summary and see what&apos;s next
+            </p>
+          </div>
+        </Link>
+      )}
 
       <div className="mt-6">
         <ProgressSummary
