@@ -84,8 +84,12 @@ export const swapTwoElements: ChallengeDefinition = {
     "You used the **parent-child navigation pattern**. DOM elements aren't just floating in space. Each one has a parent (`.parentElement`), and siblings (`.nextSibling`, `.previousSibling`). When you move an element with `insertBefore` or `appendChild`, it's automatically removed from its old position. That's why you need to save the 'bookmark' (nextSibling) BEFORE moving anything. This concept of navigating the DOM tree is essential for building drag-and-drop, reorderable lists, and any UI that rearranges content.",
   testCases: [
     {
-      input: 'swapElements("#item-a", "#item-c")',
-      expected: "undefined",
+      input: 'swapElements("#item-a", "#item-c"); document.querySelector("#list li:first-child").textContent',
+      expected: '"Item C"',
+    },
+    {
+      input: 'document.querySelector("#list li:nth-child(3)").textContent',
+      expected: '"Item A"',
     },
   ],
   domTestCases: [

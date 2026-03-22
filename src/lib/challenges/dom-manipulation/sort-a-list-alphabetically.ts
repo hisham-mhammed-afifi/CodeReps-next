@@ -99,8 +99,12 @@ export const sortAListAlphabetically: ChallengeDefinition = {
     "You just did the full **read-process-write cycle**: extract data from the DOM, transform it (sort), then write it back. This is how search results get reordered, how table columns become sortable, and how filter-and-sort UIs work. Notice you used `.map()` (from Track 1) to transform a list of elements into a list of strings. Patterns compound: Track 1 skills power Track 2 solutions.",
   testCases: [
     {
-      input: 'sortList("fruits")',
-      expected: "undefined",
+      input: 'sortList("fruits"); document.querySelector("#fruits li:first-child").textContent',
+      expected: '"Apple"',
+    },
+    {
+      input: 'document.querySelector("#fruits li:last-child").textContent',
+      expected: '"Elderberry"',
     },
   ],
   domTestCases: [

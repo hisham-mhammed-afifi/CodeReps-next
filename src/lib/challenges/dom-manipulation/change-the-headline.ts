@@ -65,33 +65,27 @@ export const changeTheHeadline: ChallengeDefinition = {
     'You just did your first DOM manipulation. `document.querySelector(\'#title\')` reaches into the page and grabs the element matching that CSS selector. Then `.textContent` lets you read or change the text inside it. This is the foundation of every interactive website: JS selects an element and changes something about it. You\'ll do this hundreds of times in your career.',
   testCases: [
     {
-      input: 'updateHeadline("Hello CodeReps")',
-      expected: "undefined",
+      input: 'updateHeadline("Hello CodeReps"); document.querySelector("#title").textContent',
+      expected: '"Hello CodeReps"',
     },
     {
-      input: 'updateHeadline("")',
-      expected: "undefined",
+      input: 'updateHeadline(""); document.querySelector("#title").textContent',
+      expected: '""',
     },
     {
-      input: 'updateHeadline("123")',
-      expected: "undefined",
+      input: 'updateHeadline("123"); document.querySelector("#title").textContent',
+      expected: '"123"',
     },
   ],
   domTestCases: [
     {
-      label: 'After updateHeadline("Hello CodeReps"), h1 text should be "Hello CodeReps"',
+      label: "The h1 element should exist",
       selector: "#title",
-      assertion: "textContent",
-      expected: "Hello CodeReps",
+      assertion: "exists",
+      expected: true,
     },
     {
-      label: 'After updateHeadline(""), h1 text should be empty',
-      selector: "#title",
-      assertion: "textContent",
-      expected: "",
-    },
-    {
-      label: 'After updateHeadline("123"), h1 text should be "123"',
+      label: 'After all calls, h1 should show the last value "123"',
       selector: "#title",
       assertion: "textContent",
       expected: "123",

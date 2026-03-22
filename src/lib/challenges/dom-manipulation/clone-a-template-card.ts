@@ -76,12 +76,12 @@ export const cloneATemplateCard: ChallengeDefinition = {
     "You used the **template stamping pattern**. Instead of manually creating every element with `createElement` (like in Challenge 02), you defined the structure once in HTML and cloned it for each use. This is cleaner, easier to maintain, and closer to how modern frameworks work. The `<template>` tag is a built-in browser feature specifically designed for this. The key concept: `cloneNode(true)` makes a deep copy, so the original template is never modified. You can stamp out as many copies as you need.",
   testCases: [
     {
-      input: 'createCard("Welcome", "First card content.")',
-      expected: "undefined",
+      input: 'createCard("Welcome", "First card content."); document.querySelectorAll("#cards-container .card").length',
+      expected: "1",
     },
     {
-      input: 'createCard("Tip", "Second card content.")',
-      expected: "undefined",
+      input: 'createCard("Tip", "Second card content."); document.querySelectorAll("#cards-container .card").length',
+      expected: "2",
     },
   ],
   domTestCases: [

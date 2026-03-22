@@ -85,38 +85,32 @@ export const buildAProfileCard: ChallengeDefinition = {
     "You just built HTML from scratch using only JavaScript. This is the **create and append pattern**: create an element, configure it (text, classes, attributes), then attach it to the page. The key insight is that `createElement` builds an element in memory. It's floating in space, not visible, until you `appendChild` it somewhere. You'll use this pattern every time you need to add new content to a page dynamically.",
   testCases: [
     {
-      input: 'createProfileCard("Sara", "Developer")',
-      expected: "undefined",
+      input: 'createProfileCard("Sara", "Developer"); document.querySelectorAll("#container .profile-card").length',
+      expected: "1",
     },
     {
-      input: 'createProfileCard("Ahmed", "Designer")',
-      expected: "undefined",
+      input: 'createProfileCard("Ahmed", "Designer"); document.querySelectorAll("#container .profile-card").length',
+      expected: "2",
     },
   ],
   domTestCases: [
-    {
-      label: "Profile card should exist in #container",
-      selector: "#container .profile-card",
-      assertion: "exists",
-      expected: true,
-    },
-    {
-      label: 'First card h2 should show "Sara"',
-      selector: "#container .profile-card h2",
-      assertion: "textContent",
-      expected: "Sara",
-    },
-    {
-      label: 'First card p should show "Developer"',
-      selector: "#container .profile-card p",
-      assertion: "textContent",
-      expected: "Developer",
-    },
     {
       label: "Should have 2 profile cards after both calls",
       selector: "#container",
       assertion: "childCount",
       expected: 2,
+    },
+    {
+      label: 'First card h2 should show "Sara"',
+      selector: "#container .profile-card:first-child h2",
+      assertion: "textContent",
+      expected: "Sara",
+    },
+    {
+      label: 'Second card h2 should show "Ahmed"',
+      selector: "#container .profile-card:nth-child(2) h2",
+      assertion: "textContent",
+      expected: "Ahmed",
     },
   ],
   starterHTML: `<div id="container"></div>`,

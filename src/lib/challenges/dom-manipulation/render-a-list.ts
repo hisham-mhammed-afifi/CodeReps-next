@@ -79,38 +79,30 @@ export const renderAList: ChallengeDefinition = {
     "You just turned data into UI. This is the **render from data pattern** and it's arguably the most important concept in frontend development. Every list, every table, every feed, every search result you've ever seen on a website was built this way: take an array of data, loop through it, create an element for each item, and attach them to the page. Frameworks like React do this with JSX (`.map()` inside a template), but the underlying idea is exactly what you just wrote.",
   testCases: [
     {
-      input: 'renderList(["Apple", "Banana", "Cherry"])',
-      expected: "undefined",
+      input: 'renderList(["Apple", "Banana", "Cherry"]); document.querySelector("#container ul").children.length',
+      expected: "3",
     },
     {
-      input: "renderList([])",
-      expected: "undefined",
+      input: 'renderList(["Apple", "Banana", "Cherry"]); document.querySelector("#container ul li:first-child").textContent',
+      expected: '"Apple"',
+    },
+    {
+      input: 'renderList([]); document.querySelectorAll("#container ul").length',
+      expected: "2",
     },
   ],
   domTestCases: [
     {
-      label: "A <ul> should exist inside #container",
+      label: "At least one <ul> should exist inside #container",
       selector: "#container ul",
       assertion: "exists",
       expected: true,
     },
     {
-      label: "The ul should have 3 list items",
-      selector: "#container ul",
+      label: "First ul should have 3 list items",
+      selector: "#container ul:first-child",
       assertion: "childCount",
       expected: 3,
-    },
-    {
-      label: 'First li should show "Apple"',
-      selector: "#container ul li:first-child",
-      assertion: "textContent",
-      expected: "Apple",
-    },
-    {
-      label: 'Last li should show "Cherry"',
-      selector: "#container ul li:last-child",
-      assertion: "textContent",
-      expected: "Cherry",
     },
   ],
   starterHTML: `<div id="container"></div>`,

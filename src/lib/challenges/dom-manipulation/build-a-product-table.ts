@@ -113,12 +113,16 @@ export const buildAProductTable: ChallengeDefinition = {
     "You just built a data table from scratch. This is the create-and-append pattern scaled up with nesting: a table contains rows, rows contain cells. Notice how you used two separate loops: one for the header (a fixed list of column names) and one for the data rows (dynamic from the array). You also used the ternary operator (`? :`) to convert a boolean into readable text. Data tables are one of the most common UI components in dashboards, admin panels, and e-commerce sites.",
   testCases: [
     {
-      input: 'renderTable([{ name: "Laptop", price: 999, inStock: true }, { name: "Keyboard", price: 75, inStock: false }, { name: "Mouse", price: 25, inStock: true }])',
-      expected: "undefined",
+      input: 'renderTable([{name:"Laptop",price:999,inStock:true},{name:"Keyboard",price:75,inStock:false},{name:"Mouse",price:25,inStock:true}]); document.querySelector("#container table").children.length',
+      expected: "4",
     },
     {
-      input: "renderTable([])",
-      expected: "undefined",
+      input: 'document.querySelector("#container table tr:first-child th:first-child").textContent',
+      expected: '"Name"',
+    },
+    {
+      input: 'document.querySelector("#container table tr:nth-child(3)").classList.contains("out-of-stock")',
+      expected: "true",
     },
   ],
   domTestCases: [
@@ -133,12 +137,6 @@ export const buildAProductTable: ChallengeDefinition = {
       selector: "#container table",
       assertion: "childCount",
       expected: 4,
-    },
-    {
-      label: 'First header cell should say "Name"',
-      selector: "#container table tr:first-child th:first-child",
-      assertion: "textContent",
-      expected: "Name",
     },
     {
       label: 'Keyboard row should have "out-of-stock" class',

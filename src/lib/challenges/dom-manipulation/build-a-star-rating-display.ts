@@ -99,32 +99,34 @@ export const buildAStarRatingDisplay: ChallengeDefinition = {
     "You used the **fragment batching pattern**. Instead of appending each star directly to the page (which triggers a redraw each time), you built everything inside a DocumentFragment first. When you append the fragment, all its children move to the page in one operation. The fragment itself disappears. It's like building a ship in a bottle: assemble inside, then place. This is a stepping stone to understanding why React's virtual DOM exists. It batches changes for the same reason: fewer DOM updates = better performance.",
   testCases: [
     {
-      input: "renderStars(3, 5)",
-      expected: "undefined",
+      input: 'renderStars(3, 5); document.querySelectorAll("#rating-container .star-filled").length',
+      expected: "3",
     },
     {
-      input: "renderStars(0, 5)",
-      expected: "undefined",
+      input: 'document.querySelectorAll("#rating-container .star-empty").length',
+      expected: "2",
+    },
+    {
+      input: 'renderStars(0, 5); document.querySelectorAll("#rating-container .star-filled").length',
+      expected: "0",
+    },
+    {
+      input: 'document.querySelectorAll("#rating-container .star-empty").length',
+      expected: "5",
     },
   ],
   domTestCases: [
     {
-      label: "Should have 5 spans total",
+      label: "After renderStars(0, 5), should have 5 spans total",
       selector: "#rating-container",
       assertion: "childCount",
       expected: 5,
     },
     {
-      label: "Should have 3 filled stars",
+      label: "All 5 should be empty stars (no filled stars)",
       selector: "#rating-container .star-filled",
       assertion: "exists",
-      expected: true,
-    },
-    {
-      label: "Should have 2 empty stars",
-      selector: "#rating-container .star-empty",
-      assertion: "exists",
-      expected: true,
+      expected: false,
     },
   ],
   starterHTML: `<div id="rating-container"></div>`,

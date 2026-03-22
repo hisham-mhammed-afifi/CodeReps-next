@@ -187,20 +187,24 @@ function filterByCategory(category) {
     "Congratulations, you just built a real, functional UI feature. This capstone ties together nearly everything from Track 2:\n\n- **Clear and rebuild**: `renderProducts` clears the grid before re-rendering\n- **Render from data**: Products array becomes visible cards\n- **Create and append**: Every card is built from scratch in JS\n- **Attribute routing**: `data-category` on buttons drives the filter logic\n- **Batch update**: Removing 'active' from all buttons before adding it to one\n- **Toggle state**: The active class shows which filter is selected\n\nThis is exactly how product listing pages work on e-commerce sites. The data comes from an API, filters narrow it down, and the UI rebuilds to show the results. The only thing missing is actual click event handlers, which is what Track 3 (Events & Interactions) will teach you.",
   testCases: [
     {
-      input: 'renderFilters(["all", "footwear", "clothing", "accessories"]); renderProducts(products)',
-      expected: "undefined",
+      input: 'renderFilters(["all","footwear","clothing","accessories"]); renderProducts(products); document.querySelector("#product-grid").children.length',
+      expected: "8",
     },
     {
-      input: 'filterByCategory("footwear")',
-      expected: "undefined",
+      input: 'document.querySelector("#filters").children.length',
+      expected: "4",
     },
     {
-      input: 'filterByCategory("clothing")',
-      expected: "undefined",
+      input: 'filterByCategory("footwear"); document.querySelector("#product-grid").children.length',
+      expected: "3",
     },
     {
-      input: 'filterByCategory("all")',
-      expected: "undefined",
+      input: 'document.querySelector(\'#filters [data-category="footwear"]\').classList.contains("active")',
+      expected: "true",
+    },
+    {
+      input: 'filterByCategory("all"); document.querySelector("#product-grid").children.length',
+      expected: "8",
     },
   ],
   domTestCases: [
@@ -211,26 +215,14 @@ function filterByCategory(category) {
       expected: 4,
     },
     {
-      label: "After rendering all products, grid should have 8 cards",
+      label: 'After filterByCategory("all"), grid should have 8 cards',
       selector: "#product-grid",
       assertion: "childCount",
       expected: 8,
     },
     {
-      label: "First product card should have an h3",
-      selector: "#product-grid .product-card:first-child h3",
-      assertion: "exists",
-      expected: true,
-    },
-    {
-      label: 'After filterByCategory("footwear"), grid should have 3 cards',
-      selector: "#product-grid",
-      assertion: "childCount",
-      expected: 3,
-    },
-    {
-      label: 'Footwear button should have "active" class',
-      selector: '#filters [data-category="footwear"]',
+      label: '"all" button should have "active" class',
+      selector: '#filters [data-category="all"]',
       assertion: "classList",
       expected: "active",
     },

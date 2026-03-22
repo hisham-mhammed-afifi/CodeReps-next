@@ -41,7 +41,7 @@ function buildPureJSScript(userCode: string, testCases: TestCase[]): string {
         const results = testCases.map(tc => {
           try {
             const actual = eval(tc.input);
-            const actualStr = JSON.stringify(actual);
+            const actualStr = actual === undefined ? "undefined" : JSON.stringify(actual);
             const expectedStr = tc.expected;
             // Compare JSON-stringified values
             return {
@@ -102,7 +102,7 @@ ${starterHTML}
     var results = testCases.map(function(tc) {
       try {
         var actual = eval(tc.input);
-        var actualStr = JSON.stringify(actual);
+        var actualStr = actual === undefined ? "undefined" : JSON.stringify(actual);
         var expectedStr = tc.expected;
         return {
           input: tc.input,

@@ -99,38 +99,30 @@ export const buildABreadcrumbTrail: ChallengeDefinition = {
     "You handled the **between items** problem: adding separators or dividers that appear between elements but not after the last one. The check `i < array.length - 1` is the universal way to say 'everything except the last one'. You also used `createTextNode` for the first time. Unlike `createElement`, a text node is just plain text with no HTML tag wrapping it. This pattern shows up any time you build lists with separators: 'tag1, tag2, tag3', breadcrumbs, step indicators like '1 - 2 - 3'.",
   testCases: [
     {
-      input: 'renderBreadcrumbs(["Home", "Products", "Shoes"])',
-      expected: "undefined",
+      input: 'renderBreadcrumbs(["Home", "Products", "Shoes"]); document.querySelectorAll("#breadcrumb span").length',
+      expected: "3",
     },
     {
-      input: 'renderBreadcrumbs(["Home"])',
-      expected: "undefined",
+      input: 'document.querySelector("#breadcrumb span.active").textContent',
+      expected: '"Shoes"',
+    },
+    {
+      input: 'renderBreadcrumbs(["Home"]); document.querySelectorAll("#breadcrumb span").length',
+      expected: "1",
     },
   ],
   domTestCases: [
     {
-      label: "Should have 3 spans after first call",
-      selector: "#breadcrumb span",
-      assertion: "exists",
-      expected: true,
+      label: 'After renderBreadcrumbs(["Home"]), should have 1 span',
+      selector: "#breadcrumb",
+      assertion: "childCount",
+      expected: 1,
     },
     {
-      label: 'First span should say "Home"',
-      selector: "#breadcrumb span:first-of-type",
-      assertion: "textContent",
-      expected: "Home",
-    },
-    {
-      label: 'Last span should say "Shoes" and have "active" class',
+      label: 'The single span should have "active" class',
       selector: "#breadcrumb span.active",
       assertion: "textContent",
-      expected: "Shoes",
-    },
-    {
-      label: "Breadcrumb should contain separator character",
-      selector: "#breadcrumb",
-      assertion: "exists",
-      expected: true,
+      expected: "Home",
     },
   ],
   starterHTML: `<nav id="breadcrumb"></nav>`,

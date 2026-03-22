@@ -95,42 +95,28 @@ export const clearAndRebuildATodoList: ChallengeDefinition = {
     "You used the **clear and rebuild pattern**. This is a critical concept: when your data changes, you don't try to figure out which individual elements to update. You just erase everything and re-render from scratch. It sounds wasteful, but it's actually how React's mental model works. React's virtual DOM is an optimization on top of this exact idea. For small lists like this, clearing and rebuilding is perfectly fine and much simpler than tracking individual changes.",
   testCases: [
     {
-      input: 'renderTodos([{ text: "Buy groceries", done: false }, { text: "Walk the dog", done: true }, { text: "Write code", done: false }])',
-      expected: "undefined",
+      input: 'renderTodos([{text:"Buy groceries",done:false},{text:"Walk the dog",done:true},{text:"Write code",done:false}]); document.querySelector("#todo-list").children.length',
+      expected: "3",
     },
     {
-      input: 'renderTodos([{ text: "Sleep", done: false }])',
-      expected: "undefined",
+      input: 'renderTodos([{text:"Buy groceries",done:false},{text:"Walk the dog",done:true},{text:"Write code",done:false}]); document.querySelector("#todo-list li:nth-child(2)").classList.contains("completed")',
+      expected: "true",
     },
     {
-      input: "renderTodos([])",
-      expected: "undefined",
+      input: 'renderTodos([{text:"Sleep",done:false}]); document.querySelector("#todo-list").children.length',
+      expected: "1",
+    },
+    {
+      input: 'renderTodos([]); document.querySelector("#todo-list").children.length',
+      expected: "0",
     },
   ],
   domTestCases: [
     {
-      label: "Should render 3 list items from first call",
+      label: "After renderTodos([]), the list should be empty",
       selector: "#todo-list",
       assertion: "childCount",
-      expected: 3,
-    },
-    {
-      label: 'First item should say "Buy groceries"',
-      selector: "#todo-list li:first-child",
-      assertion: "textContent",
-      expected: "Buy groceries",
-    },
-    {
-      label: 'Second item (done) should have "completed" class',
-      selector: "#todo-list li:nth-child(2)",
-      assertion: "classList",
-      expected: "completed",
-    },
-    {
-      label: 'Third item should NOT have "completed" class',
-      selector: "#todo-list li:nth-child(3)",
-      assertion: "exists",
-      expected: true,
+      expected: 0,
     },
   ],
   starterHTML: `<div id="app">
