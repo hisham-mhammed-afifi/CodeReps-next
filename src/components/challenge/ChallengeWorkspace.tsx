@@ -10,9 +10,13 @@ import { useAutoSave } from "@/hooks/useAutoSave";
 import { useTimeTracker } from "@/hooks/useTimeTracker";
 import {
   getAvailableModes,
+  getDefaultMode,
   enforceMode,
   shouldShowModePrompt,
   shouldEncourageIndependent,
+  shouldHighlightSemiGuided,
+  getModePromptMessage,
+  getCapstoneNote,
 } from "@/lib/challenges/mode-rules";
 import { StepIndicator } from "./StepIndicator";
 import { StepTransition } from "./StepTransition";
@@ -101,12 +105,13 @@ export function ChallengeWorkspace({
   }, [hydrate]);
 
   // Derive mode context from store state (no setState in effects)
-  const trackCompleted = hydrated ? isTrackCompleted() : false;
+  const trackSlug = challenge.trackSlug;
+  const trackCompleted = hydrated ? isTrackCompleted(trackSlug) : false;
   const firstAttempt = hydrated ? isFirstAttempt(challenge.slug) : true;
 
   const availableModes = useMemo(
-    () => getAvailableModes(challenge.order, trackCompleted, firstAttempt),
-    [challenge.order, trackCompleted, firstAttempt],
+    () => getAvailableModes(challenge.order, trackCompleted, firstAttempt, trackSlug),
+    [challenge.order, trackCompleted, firstAttempt, trackSlug],
   );
 
   const encourageIndependent = useMemo(
@@ -114,9 +119,29 @@ export function ChallengeWorkspace({
     [challenge.order, trackCompleted],
   );
 
+  const highlightSemiGuided = useMemo(
+    () => shouldHighlightSemiGuided(challenge.order, trackCompleted, trackSlug),
+    [challenge.order, trackCompleted, trackSlug],
+  );
+
+  const defaultMode = useMemo(
+    () => getDefaultMode(challenge.order, trackSlug),
+    [challenge.order, trackSlug],
+  );
+
+  const promptMessage = useMemo(
+    () => getModePromptMessage(challenge.order, trackSlug),
+    [challenge.order, trackSlug],
+  );
+
+  const capstoneNote = useMemo(
+    () => getCapstoneNote(challenge.order, trackSlug),
+    [challenge.order, trackSlug],
+  );
+
   const needsPrompt = useMemo(
-    () => shouldShowModePrompt(challenge.order, trackCompleted, firstAttempt),
-    [challenge.order, trackCompleted, firstAttempt],
+    () => shouldShowModePrompt(challenge.order, trackCompleted, firstAttempt, trackSlug),
+    [challenge.order, trackCompleted, firstAttempt, trackSlug],
   );
 
   // Determine the active mode: user selection > URL request > auto
@@ -128,7 +153,7 @@ export function ChallengeWorkspace({
 
     // If a mode was requested via URL, enforce it
     if (requestedMode) {
-      return enforceMode(requestedMode, challenge.order, trackCompleted, firstAttempt);
+      return enforceMode(requestedMode, challenge.order, trackCompleted, firstAttempt, trackSlug);
     }
 
     // Single available mode — use it directly
@@ -137,8 +162,8 @@ export function ChallengeWorkspace({
     // Multiple modes, no URL mode, no user selection yet — show prompt
     if (needsPrompt) return null;
 
-    return "guided";
-  }, [hydrated, userSelectedMode, requestedMode, challenge.order, trackCompleted, firstAttempt, availableModes, needsPrompt]);
+    return defaultMode;
+  }, [hydrated, userSelectedMode, requestedMode, challenge.order, trackCompleted, firstAttempt, trackSlug, availableModes, needsPrompt, defaultMode]);
 
   const handlePromptSelect = useCallback(
     (mode: ChallengeMode) => {
@@ -163,6 +188,10 @@ export function ChallengeWorkspace({
         challengeTitle={challenge.title}
         availableModes={availableModes}
         encourageIndependent={encourageIndependent}
+        highlightSemiGuided={highlightSemiGuided}
+        defaultMode={defaultMode}
+        promptMessage={promptMessage}
+        capstoneNote={capstoneNote}
         onSelect={handlePromptSelect}
       />
     );

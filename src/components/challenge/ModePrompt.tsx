@@ -7,6 +7,10 @@ interface ModePromptProps {
   challengeTitle: string;
   availableModes: ChallengeMode[];
   encourageIndependent: boolean;
+  highlightSemiGuided?: boolean;
+  defaultMode?: ChallengeMode;
+  promptMessage?: string;
+  capstoneNote?: string | null;
   onSelect: (mode: ChallengeMode) => void;
 }
 
@@ -38,6 +42,10 @@ export function ModePrompt({
   challengeTitle,
   availableModes,
   encourageIndependent,
+  highlightSemiGuided = false,
+  defaultMode,
+  promptMessage,
+  capstoneNote,
   onSelect,
 }: ModePromptProps) {
   const handleSelect = useCallback(
@@ -62,8 +70,7 @@ export function ModePrompt({
             {challengeTitle}
           </h2>
           <p className="text-muted-foreground">
-            Ready to try with less guidance? Pick the approach that feels right
-            for you.
+            {promptMessage ?? "Ready to try with less guidance? Pick the approach that feels right for you."}
           </p>
         </div>
 
@@ -72,13 +79,17 @@ export function ModePrompt({
             const config = MODE_CONFIG[mode];
             const isEncouraged =
               mode === "independent" && encourageIndependent;
+            const isSemiHighlighted =
+              mode === "semi_guided" && highlightSemiGuided;
+            const isDefault = defaultMode === mode;
+            const isHighlighted = isEncouraged || isSemiHighlighted;
 
             return (
               <button
                 key={mode}
                 onClick={() => handleSelect(mode)}
                 className={`w-full rounded-xl border-2 p-4 text-left transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand-indigo focus:ring-offset-2 ${
-                  isEncouraged
+                  isHighlighted
                     ? "border-brand-indigo bg-brand-indigo/5 hover:bg-brand-indigo/10"
                     : "border-border bg-card hover:bg-muted/50"
                 }`}
@@ -98,6 +109,16 @@ export function ModePrompt({
                           Try it!
                         </span>
                       )}
+                      {isSemiHighlighted && !isEncouraged && (
+                        <span className="inline-flex items-center rounded-full bg-brand-indigo/10 px-2 py-0.5 text-xs font-semibold text-brand-indigo">
+                          Recommended
+                        </span>
+                      )}
+                      {isDefault && !isHighlighted && (
+                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                          Default
+                        </span>
+                      )}
                     </div>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {config.description}
@@ -108,6 +129,12 @@ export function ModePrompt({
             );
           })}
         </div>
+
+        {capstoneNote && (
+          <p className="text-sm font-medium text-brand-indigo">
+            {capstoneNote}
+          </p>
+        )}
 
         <p className="text-xs text-muted-foreground/70">
           You can always switch modes later from the workspace header.

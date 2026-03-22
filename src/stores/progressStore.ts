@@ -4,8 +4,15 @@ import type {
   ChallengeStatus,
   ChallengeMode,
 } from "@/types/progress";
+import { track1Challenges } from "@/lib/challenges/track-1-fundamentals";
+import { track2Challenges } from "@/lib/challenges/dom-manipulation";
 
 const STORAGE_KEY = "codereps-track1-progress";
+
+const TRACK_SLUGS: Record<string, Set<string>> = {
+  fundamentals: new Set(track1Challenges.map((c) => c.slug)),
+  "dom-manipulation": new Set(track2Challenges.map((c) => c.slug)),
+};
 
 interface ProgressState {
   /** Map of challenge slug -> UserProgress */
@@ -21,7 +28,7 @@ interface ProgressState {
   getCompletedSlugs: () => string[];
   getTotalTimeSpent: () => number;
   getTotalAttempts: () => number;
-  isTrackCompleted: () => boolean;
+  isTrackCompleted: (trackSlug?: string) => boolean;
   isFirstAttempt: (slug: string) => boolean;
   hasStartedTrack: () => boolean;
 
@@ -135,9 +142,14 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     );
   },
 
-  isTrackCompleted: () => {
-    const TOTAL_TRACK_1_CHALLENGES = 15;
-    return get().getCompletedCount() >= TOTAL_TRACK_1_CHALLENGES;
+  isTrackCompleted: (trackSlug = "fundamentals") => {
+    const slugSet = TRACK_SLUGS[trackSlug];
+    if (!slugSet) return false;
+    const { challenges } = get();
+    const completed = Object.entries(challenges).filter(
+      ([slug, p]) => slugSet.has(slug) && p.status === "completed",
+    ).length;
+    return completed >= slugSet.size;
   },
 
   isFirstAttempt: (slug) => {
