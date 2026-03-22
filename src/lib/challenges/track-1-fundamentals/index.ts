@@ -1,10 +1,36 @@
 import type { ChallengeDefinition } from "@/types/challenge";
 import { theGreetingMachine } from "./the-greeting-machine";
 import { evenOrOdd } from "./even-or-odd";
+import { findTheLongestWord } from "./find-the-longest-word";
+import { doubleTheNumbers } from "./double-the-numbers";
+import { countTheVowels } from "./count-the-vowels";
+import { reverseAString } from "./reverse-a-string";
+import { removeDuplicates } from "./remove-duplicates";
+import { fizzbuzz } from "./fizzbuzz";
+import { sumOfPositives } from "./sum-of-positives";
+import { capitalizeFirstLetter } from "./capitalize-first-letter";
+import { findTheIndex } from "./find-the-index";
+import { groupByProperty } from "./group-by-property";
+import { flattenAnArray } from "./flatten-an-array";
+import { createALookupObject } from "./create-a-lookup-object";
+import { chainOfTransformations } from "./chain-of-transformations";
 
 export const track1Challenges: ChallengeDefinition[] = [
   theGreetingMachine,
   evenOrOdd,
+  findTheLongestWord,
+  doubleTheNumbers,
+  countTheVowels,
+  reverseAString,
+  removeDuplicates,
+  fizzbuzz,
+  sumOfPositives,
+  capitalizeFirstLetter,
+  findTheIndex,
+  groupByProperty,
+  flattenAnArray,
+  createALookupObject,
+  chainOfTransformations,
 ];
 
 export function getChallengeBySlug(
