@@ -29,6 +29,7 @@ import { ModePrompt } from "./ModePrompt";
 import { ToastContainer } from "@/components/ui/toast";
 import { getNextChallengeSlug } from "@/lib/challenges/track-1-fundamentals";
 import { LivePreviewPanel } from "./LivePreviewPanel";
+import { HorizontalDraggableDivider } from "./HorizontalDraggableDivider";
 
 interface ChallengeWorkspaceProps {
   challenge: ChallengeDefinition;
@@ -228,7 +229,16 @@ function GuidedWorkspace({
   const { toasts, removeToast } = useAutoSave(challenge.slug);
 
   const [leftPanePercent, setLeftPanePercent] = useState(40);
+  const [editorSplit, setEditorSplit] = useState({ slug: challenge.slug, percent: 60 });
+  if (editorSplit.slug !== challenge.slug) {
+    setEditorSplit({ slug: challenge.slug, percent: 60 });
+  }
+  const editorHeightPercent = editorSplit.percent;
+  const setEditorHeightPercent = useCallback((updater: (prev: number) => number) => {
+    setEditorSplit((prev) => ({ ...prev, percent: updater(prev.percent) }));
+  }, []);
   const containerRef = useRef<HTMLDivElement>(null);
+  const rightPaneRef = useRef<HTMLDivElement>(null);
 
   // Hydrate progress store and restore saved progress
   useEffect(() => {
@@ -257,6 +267,18 @@ function GuidedWorkspace({
       Math.min(70, Math.max(25, prev + deltaPercent)),
     );
   }, []);
+
+  const handleHorizontalDrag = useCallback((deltaY: number) => {
+    if (!rightPaneRef.current) return;
+    const paneHeight = rightPaneRef.current.offsetHeight;
+    // Enforce min 200px for both editor and preview
+    const minPercent = (200 / paneHeight) * 100;
+    const maxPercent = 100 - minPercent;
+    const deltaPercent = (deltaY / paneHeight) * 100;
+    setEditorHeightPercent((prev) =>
+      Math.min(maxPercent, Math.max(minPercent, prev + deltaPercent)),
+    );
+  }, [setEditorHeightPercent]);
 
   const handleAllTestsPassed = useCallback(() => {
     completeStep("verify");
@@ -404,8 +426,11 @@ function GuidedWorkspace({
         <DraggableDivider onDrag={handleDividerDrag} />
 
         {/* Code editor pane + optional preview */}
-        <div className="flex-1 flex flex-col overflow-hidden min-h-[200px] lg:min-h-0">
-          <div className={`${challenge.requiresPreview ? "flex-[6]" : "flex-1"} flex flex-col bg-brand-navy overflow-hidden`}>
+        <div ref={rightPaneRef} className="flex-1 flex flex-col overflow-hidden min-h-[200px] lg:min-h-0">
+          <div
+            className="flex flex-col bg-brand-navy overflow-hidden"
+            style={challenge.requiresPreview ? { flexBasis: `${editorHeightPercent}%`, flexShrink: 0, flexGrow: 0 } : { flex: 1 }}
+          >
             {isOnWriteOrVerify ? (
               <StepCodeEditor starterCode={challenge.starterCode} />
             ) : (
@@ -420,13 +445,16 @@ function GuidedWorkspace({
             )}
           </div>
           {challenge.requiresPreview && challenge.starterHTML && (
-            <div className="flex-[4] overflow-hidden">
-              <LivePreviewPanel
-                starterHTML={challenge.starterHTML}
-                starterCSS={challenge.starterCSS}
-                isFirstChallenge={challenge.order === 1}
-              />
-            </div>
+            <>
+              <HorizontalDraggableDivider onDrag={handleHorizontalDrag} />
+              <div className="flex-1 overflow-hidden">
+                <LivePreviewPanel
+                  starterHTML={challenge.starterHTML}
+                  starterCSS={challenge.starterCSS}
+                  isFirstChallenge={challenge.order === 1}
+                />
+              </div>
+            </>
           )}
         </div>
       </div>
