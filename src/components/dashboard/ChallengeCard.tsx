@@ -1,8 +1,20 @@
 "use client";
 
-import { Lock, CheckCircle2, ArrowRight, Sparkles } from "lucide-react";
+import { Lock, CheckCircle2, ArrowRight, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ChallengeStatus } from "@/types/progress";
+import type { ChallengeStatus, ChallengeMode } from "@/types/progress";
+
+const DIFFICULTY_STYLES: Record<string, { color: string; bg: string }> = {
+  beginner: { color: "text-brand-emerald", bg: "bg-brand-emerald/10" },
+  intermediate: { color: "text-brand-amber", bg: "bg-brand-amber/10" },
+  advanced: { color: "text-brand-rose", bg: "bg-brand-rose/10" },
+};
+
+const MODE_LABELS: Record<ChallengeMode, string> = {
+  guided: "Guided",
+  semi_guided: "Semi-Guided",
+  independent: "Independent",
+};
 
 interface ChallengeCardProps {
   order: number;
@@ -12,7 +24,8 @@ interface ChallengeCardProps {
   estimatedMinutes: number;
   status: ChallengeStatus;
   isUnlocked: boolean;
-  isFirst: boolean;
+  isNextUp: boolean;
+  completedMode?: ChallengeMode | null;
 }
 
 export function ChallengeCard({
@@ -23,16 +36,18 @@ export function ChallengeCard({
   estimatedMinutes,
   status,
   isUnlocked,
-  isFirst,
+  isNextUp,
+  completedMode,
 }: ChallengeCardProps) {
   const isLocked = !isUnlocked;
   const isCompleted = status === "completed";
   const isInProgress = status === "in_progress";
+  const diffStyle = DIFFICULTY_STYLES[difficulty] ?? DIFFICULTY_STYLES.beginner;
 
   if (isLocked) {
     return (
       <div
-        className="relative rounded-xl border border-border/50 bg-card/50 p-4 opacity-60 select-none"
+        className="relative rounded-xl border border-border/50 bg-card/50 p-4 opacity-50 select-none"
         aria-disabled="true"
       >
         <div className="flex items-center justify-between">
@@ -42,10 +57,11 @@ export function ChallengeCard({
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                Challenge {order}
+                {title}
               </p>
               <p className="text-xs text-muted-foreground/60">
-                {difficulty} &middot; ~{estimatedMinutes} min
+                <span className={diffStyle.color}>{difficulty}</span>
+                {" "}&middot; ~{estimatedMinutes} min
               </p>
             </div>
           </div>
@@ -59,16 +75,18 @@ export function ChallengeCard({
     <a
       href={`/challenge/${slug}`}
       className={cn(
-        "group relative block rounded-xl border p-4 transition-all hover:shadow-md",
-        isCompleted
-          ? "border-brand-emerald/30 bg-brand-emerald/5 hover:border-brand-emerald/50"
-          : "border-border bg-card hover:border-brand-indigo/40",
+        "group relative block rounded-xl border p-4 transition-all hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-indigo",
+        isNextUp
+          ? "border-brand-indigo bg-brand-indigo/5 ring-1 ring-brand-indigo/20 hover:border-brand-indigo/80"
+          : isCompleted
+            ? "border-brand-emerald/30 bg-brand-emerald/5 hover:border-brand-emerald/50"
+            : "border-border bg-card hover:border-brand-indigo/40",
       )}
     >
-      {isFirst && status === "not_started" && (
+      {isNextUp && (
         <div className="absolute -top-2.5 left-4 flex items-center gap-1 rounded-full bg-brand-indigo px-2.5 py-0.5 text-xs font-medium text-white">
-          <Sparkles className="h-3 w-3" aria-hidden="true" />
-          Start here
+          <Zap className="h-3 w-3" aria-hidden="true" />
+          Next up
         </div>
       )}
 
@@ -97,25 +115,35 @@ export function ChallengeCard({
             >
               {title}
             </p>
-            <p className="text-xs text-muted-foreground">
-              {difficulty} &middot; ~{estimatedMinutes} min
+            <div className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+              <span className={cn("font-medium", diffStyle.color)}>
+                {difficulty}
+              </span>
+              <span>&middot;</span>
+              <span>~{estimatedMinutes} min</span>
               {isInProgress && (
-                <span className="ml-2 text-brand-amber font-medium">
-                  In progress
-                </span>
+                <>
+                  <span>&middot;</span>
+                  <span className="text-brand-amber font-medium">
+                    In progress
+                  </span>
+                </>
               )}
-              {isCompleted && (
-                <span className="ml-2 text-brand-emerald font-medium">
-                  Completed
-                </span>
+              {isCompleted && completedMode && (
+                <>
+                  <span>&middot;</span>
+                  <span className="text-brand-emerald font-medium">
+                    {MODE_LABELS[completedMode]}
+                  </span>
+                </>
               )}
-            </p>
+            </div>
           </div>
         </div>
 
         <ArrowRight
           className={cn(
-            "h-4 w-4 transition-transform group-hover:translate-x-0.5",
+            "h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5",
             isCompleted ? "text-brand-emerald" : "text-muted-foreground",
           )}
           aria-hidden="true"

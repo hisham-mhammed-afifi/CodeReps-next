@@ -18,8 +18,11 @@ interface ProgressState {
   getChallengeStatus: (slug: string) => ChallengeStatus;
   isChallengeUnlocked: (slug: string, order: number) => boolean;
   getCompletedCount: () => number;
+  getCompletedSlugs: () => string[];
+  getTotalTimeSpent: () => number;
   isTrackCompleted: () => boolean;
   isFirstAttempt: (slug: string) => boolean;
+  hasStartedTrack: () => boolean;
 
   initProgress: (slug: string, mode?: ChallengeMode) => void;
   saveStepProgress: (
@@ -111,6 +114,19 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     ).length;
   },
 
+  getCompletedSlugs: () => {
+    return Object.entries(get().challenges)
+      .filter(([, p]) => p.status === "completed")
+      .map(([slug]) => slug);
+  },
+
+  getTotalTimeSpent: () => {
+    return Object.values(get().challenges).reduce(
+      (total, p) => total + p.timeSpentSeconds,
+      0,
+    );
+  },
+
   isTrackCompleted: () => {
     const TOTAL_TRACK_1_CHALLENGES = 15;
     return get().getCompletedCount() >= TOTAL_TRACK_1_CHALLENGES;
@@ -119,6 +135,10 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   isFirstAttempt: (slug) => {
     const progress = get().challenges[slug];
     return !progress || progress.status === "not_started";
+  },
+
+  hasStartedTrack: () => {
+    return Object.keys(get().challenges).length > 0;
   },
 
   initProgress: (slug, mode = "guided") => {
