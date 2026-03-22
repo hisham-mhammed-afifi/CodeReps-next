@@ -1,5 +1,6 @@
-import type { TestCase, TestRunResult } from "@/types/challenge";
+import type { TestCase, DomTestCase, TestRunResult } from "@/types/challenge";
 import { translateError } from "./translateError";
+import { buildDomAssertionScript } from "./domAssertions";
 
 const TIMEOUT_MS = 5000;
 
@@ -8,6 +9,8 @@ interface RunTestsOptions {
   starterHTML?: string;
   /** Track 2+: CSS to inject alongside the starter HTML */
   starterCSS?: string;
+  /** Track 2+: DOM-specific test assertions run after user code executes */
+  domTestCases?: DomTestCase[];
 }
 
 function createSandboxIframe(): HTMLIFrameElement {
@@ -74,11 +77,15 @@ function buildDOMScript(
   testCases: TestCase[],
   starterHTML: string,
   starterCSS?: string,
+  domTestCases?: DomTestCase[],
 ): string {
   const testCasesJson = JSON.stringify(testCases);
   const cssBlock = starterCSS
     ? `<style>${starterCSS}</style>`
     : "";
+  const domAssertionCode = domTestCases?.length
+    ? buildDomAssertionScript(domTestCases)
+    : "[]";
 
   return `<!DOCTYPE html>
 <html>
@@ -90,18 +97,19 @@ ${starterHTML}
     // Run user code that manipulates the DOM
     ${userCode}
 
-    // Run test cases (these eval against the now-modified DOM)
-    const testCases = ${testCasesJson};
-    const results = testCases.map(tc => {
+    // Run return-value test cases (these eval against the now-modified DOM)
+    var testCases = ${testCasesJson};
+    var results = testCases.map(function(tc) {
       try {
-        const actual = eval(tc.input);
-        const actualStr = JSON.stringify(actual);
-        const expectedStr = tc.expected;
+        var actual = eval(tc.input);
+        var actualStr = JSON.stringify(actual);
+        var expectedStr = tc.expected;
         return {
           input: tc.input,
           expected: tc.expected,
           actual: actualStr,
           passed: actualStr === expectedStr,
+          category: "Function output"
         };
       } catch (err) {
         return {
@@ -109,13 +117,18 @@ ${starterHTML}
           expected: tc.expected,
           actual: "Error: " + err.message,
           passed: false,
+          category: "Function output"
         };
       }
     });
 
+    // Run DOM assertions (element existence, textContent, classList, etc.)
+    var domResults = ${domAssertionCode};
+    var allResults = results.concat(domResults);
+
     // Capture the resulting DOM HTML for the preview panel
-    const resultHTML = document.body.innerHTML;
-    parent.postMessage({ type: "results", results, resultHTML }, "*");
+    var resultHTML = document.body.innerHTML;
+    parent.postMessage({ type: "results", results: allResults, resultHTML: resultHTML }, "*");
   } catch (err) {
     parent.postMessage({ type: "error", error: err.message + (err.stack ? "\\n" + err.stack : "") }, "*");
   }
@@ -173,7 +186,7 @@ export function runTests(
 
     // Build the appropriate sandbox script
     const srcdoc = options?.starterHTML
-      ? buildDOMScript(userCode, testCases, options.starterHTML, options.starterCSS)
+      ? buildDOMScript(userCode, testCases, options.starterHTML, options.starterCSS, options.domTestCases)
       : buildPureJSScript(userCode, testCases);
 
     iframe.srcdoc = srcdoc;

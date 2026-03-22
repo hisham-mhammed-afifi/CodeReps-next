@@ -253,6 +253,7 @@ export function SemiGuidedWorkspace({
               onAllPassed={handleAllTestsPassed}
               starterHTML={challenge.starterHTML}
               starterCSS={challenge.starterCSS}
+              domTestCases={challenge.domTestCases}
             />
             {challengeCompleted && (
               <div className="mt-4">

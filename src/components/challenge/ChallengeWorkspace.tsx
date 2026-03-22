@@ -361,6 +361,7 @@ function GuidedWorkspace({
               onAllPassed={handleAllTestsPassed}
               starterHTML={challenge.starterHTML}
               starterCSS={challenge.starterCSS}
+              domTestCases={challenge.domTestCases}
             />
             {challengeCompleted && (
               <CompletionFlow

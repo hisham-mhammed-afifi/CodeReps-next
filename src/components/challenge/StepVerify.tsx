@@ -5,7 +5,7 @@ import { Play, CheckCircle2, XCircle, AlertTriangle, Loader2 } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { useChallengeStore } from "@/stores/challengeStore";
 import { runTests } from "@/lib/sandbox/runTests";
-import type { TestCase } from "@/types/challenge";
+import type { TestCase, DomTestCase } from "@/types/challenge";
 
 interface StepVerifyProps {
   testCases: TestCase[];
@@ -14,9 +14,11 @@ interface StepVerifyProps {
   starterHTML?: string;
   /** Track 2+: CSS for DOM sandbox execution */
   starterCSS?: string;
+  /** Track 2+: DOM-specific test assertions */
+  domTestCases?: DomTestCase[];
 }
 
-export function StepVerify({ testCases, onAllPassed, starterHTML, starterCSS }: StepVerifyProps) {
+export function StepVerify({ testCases, onAllPassed, starterHTML, starterCSS, domTestCases }: StepVerifyProps) {
   const {
     userCode,
     testResults,
@@ -37,7 +39,7 @@ export function StepVerify({ testCases, onAllPassed, starterHTML, starterCSS }: 
     clearTestResults();
     setIsRunningTests(true);
 
-    const options = starterHTML ? { starterHTML, starterCSS } : undefined;
+    const options = starterHTML ? { starterHTML, starterCSS, domTestCases } : undefined;
     const result = await runTests(userCode, testCases, options);
 
     setIsRunningTests(false);
@@ -65,10 +67,10 @@ export function StepVerify({ testCases, onAllPassed, starterHTML, starterCSS }: 
         if (starterHTML) resetPreview();
         break;
     }
-  }, [userCode, testCases, starterHTML, starterCSS, clearTestResults, setIsRunningTests, setTestResults, setTestError, setAllTestsPassed, setPreviewHTML, resetPreview, onAllPassed]);
+  }, [userCode, testCases, starterHTML, starterCSS, domTestCases, clearTestResults, setIsRunningTests, setTestResults, setTestError, setAllTestsPassed, setPreviewHTML, resetPreview, onAllPassed]);
 
   const passedCount = testResults?.filter((r) => r.passed).length ?? 0;
-  const totalCount = testResults?.length ?? testCases.length;
+  const totalCount = testResults?.length ?? (testCases.length + (domTestCases?.length ?? 0));
 
   return (
     <div className="flex flex-col gap-4">
@@ -155,21 +157,49 @@ export function StepVerify({ testCases, onAllPassed, starterHTML, starterCSS }: 
                 <span className={`text-sm font-medium ${result.passed ? "text-brand-emerald" : "text-brand-rose"}`}>
                   {result.passed ? "Passed" : "Failed"}
                 </span>
+                {result.category && (
+                  <span className="text-xs text-brand-slate-400 ml-auto rounded bg-muted/50 px-1.5 py-0.5">
+                    {result.category}
+                  </span>
+                )}
               </div>
               <div className="ml-6 space-y-1 font-mono text-xs">
-                <p className="text-brand-slate-400">
-                  <span className="text-brand-slate-400/60">Call: </span>
-                  {result.input}
-                </p>
-                <p className="text-brand-slate-400">
-                  <span className="text-brand-slate-400/60">Expected: </span>
-                  {result.expected}
-                </p>
-                {!result.passed && (
-                  <p className="text-brand-rose">
-                    <span className="text-brand-rose/60">Actual: </span>
-                    {result.actual}
-                  </p>
+                {result.category === "Page state" ? (
+                  <>
+                    <p className="text-brand-slate-400">
+                      <span className="text-brand-slate-400/60">Check: </span>
+                      {result.input}
+                    </p>
+                    {!result.passed && (
+                      <>
+                        <p className="text-brand-slate-400">
+                          <span className="text-brand-slate-400/60">Expected: </span>
+                          {result.expected}
+                        </p>
+                        <p className="text-brand-rose">
+                          <span className="text-brand-rose/60">Found: </span>
+                          {result.actual}
+                        </p>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-brand-slate-400">
+                      <span className="text-brand-slate-400/60">Call: </span>
+                      {result.input}
+                    </p>
+                    <p className="text-brand-slate-400">
+                      <span className="text-brand-slate-400/60">Expected: </span>
+                      {result.expected}
+                    </p>
+                    {!result.passed && (
+                      <p className="text-brand-rose">
+                        <span className="text-brand-rose/60">Actual: </span>
+                        {result.actual}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             </div>

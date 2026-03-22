@@ -8,6 +8,8 @@ export interface TestResult {
   expected: string;
   actual: string;
   passed: boolean;
+  /** "Function output" for return-value tests, "Page state" for DOM assertions */
+  category?: "Function output" | "Page state";
 }
 
 export type TestRunResult =
