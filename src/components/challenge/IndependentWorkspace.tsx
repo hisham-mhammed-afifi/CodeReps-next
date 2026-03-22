@@ -3,7 +3,6 @@
 import { useEffect, useCallback, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ChallengeDefinition } from "@/types/challenge";
-import type { ChallengeMode } from "@/types/progress";
 import { useChallengeStore } from "@/stores/challengeStore";
 import { useProgressStore } from "@/stores/progressStore";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -11,17 +10,16 @@ import { useTimeTracker } from "@/hooks/useTimeTracker";
 import { StepCodeEditor } from "./StepCodeEditor";
 import { StepVerify } from "./StepVerify";
 import { CompletionFlow } from "./CompletionFlow";
-import { HintPanel } from "./HintPanel";
-import { SemiGuidedHintContent } from "./SemiGuidedHintContent";
 import { ModeSelector } from "./ModeSelector";
 import { ToastContainer } from "@/components/ui/toast";
 import { getNextChallengeSlug } from "@/lib/challenges/track-1-fundamentals";
+import type { ChallengeMode } from "@/types/progress";
 
-interface SemiGuidedWorkspaceProps {
+interface IndependentWorkspaceProps {
   challenge: ChallengeDefinition;
 }
 
-/** Strip guiding comments from starter code, keeping only the function signature. */
+/** Strip all guiding comments, keeping only the function signature with an empty body. */
 function getFunctionSignature(starterCode: string): string {
   return starterCode
     .split("\n")
@@ -29,7 +27,7 @@ function getFunctionSignature(starterCode: string): string {
     .join("\n");
 }
 
-export function SemiGuidedWorkspace({ challenge }: SemiGuidedWorkspaceProps) {
+export function IndependentWorkspace({ challenge }: IndependentWorkspaceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -38,26 +36,28 @@ export function SemiGuidedWorkspace({ challenge }: SemiGuidedWorkspaceProps) {
     setChallenge,
     completeStep,
     setChallengeCompleted,
+    setMode,
   } = useChallengeStore();
 
-  const { hydrate, getProgress, initProgress, addTime, updateMode } = useProgressStore();
+  const { hydrate, getProgress, initProgress, addTime, updateMode } =
+    useProgressStore();
   const { toasts, removeToast } = useAutoSave(challenge.slug);
 
-  const [leftPanePercent, setLeftPanePercent] = useState(30);
+  const [leftPanePercent, setLeftPanePercent] = useState(35);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Hydrate progress store and initialize for semi-guided mode
+  // Hydrate progress store and initialize for independent mode
   useEffect(() => {
     hydrate();
     const saved = getProgress(challenge.slug);
-    // Initialize the store with semi-guided starter code (no comments)
-    const semiGuidedChallenge = {
+    const independentChallenge = {
       ...challenge,
       starterCode: getFunctionSignature(challenge.starterCode),
     };
-    setChallenge(semiGuidedChallenge, saved);
-    initProgress(challenge.slug);
-  }, [challenge, setChallenge, hydrate, getProgress, initProgress]);
+    setChallenge(independentChallenge, saved);
+    setMode("independent");
+    initProgress(challenge.slug, "independent");
+  }, [challenge, setChallenge, setMode, hydrate, getProgress, initProgress]);
 
   // Track time spent
   useTimeTracker(
@@ -86,14 +86,19 @@ export function SemiGuidedWorkspace({ challenge }: SemiGuidedWorkspaceProps) {
 
   const handleModeChange = useCallback(
     (newMode: ChallengeMode) => {
+      // Track mode_switched event (analytics placeholder)
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("codereps:mode_switched", {
-            detail: { from_mode: "semi_guided", to_mode: newMode },
+            detail: { from_mode: "independent", to_mode: newMode },
           }),
         );
       }
+
+      // Update progress store with new mode
       updateMode(challenge.slug, newMode);
+
+      // Navigate to the same challenge with the new mode
       const params = new URLSearchParams(searchParams.toString());
       params.set("mode", newMode);
       router.push(`/challenge/${challenge.slug}?${params.toString()}`);
@@ -102,14 +107,14 @@ export function SemiGuidedWorkspace({ challenge }: SemiGuidedWorkspaceProps) {
   );
 
   const nextChallengeSlug = getNextChallengeSlug(challenge.slug);
-  const semiGuidedStarterCode = getFunctionSignature(challenge.starterCode);
+  const independentStarterCode = getFunctionSignature(challenge.starterCode);
 
   return (
     <div className="flex flex-col h-full">
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
-      {/* Header */}
-      <div className="border-b border-border bg-card px-4 py-3 sm:px-6 flex items-start justify-between flex-wrap gap-2">
+      {/* Header — clean and minimal */}
+      <div className="border-b border-border bg-card px-4 py-3 sm:px-6 flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-xl font-bold text-foreground">
             {challenge.title}
@@ -117,49 +122,44 @@ export function SemiGuidedWorkspace({ challenge }: SemiGuidedWorkspaceProps) {
           <p className="text-sm text-muted-foreground">
             {challenge.difficulty} &middot; ~{challenge.estimatedMinutes} min
             &middot;{" "}
-            <span className="text-brand-indigo font-medium">Semi-Guided</span>
+            <span className="text-brand-indigo font-medium">Independent</span>
           </p>
         </div>
-        <ModeSelector currentMode="semi_guided" onModeChange={handleModeChange} />
+        <ModeSelector currentMode="independent" onModeChange={handleModeChange} />
       </div>
 
       <div
         ref={containerRef}
         className="flex flex-1 flex-col lg:flex-row overflow-hidden"
       >
-        {/* Hint sidebar (desktop) / stacked sections (mobile) */}
+        {/* Problem statement pane */}
         <div
-          className="w-full overflow-y-auto border-b lg:border-b-0 lg:border-r border-border p-4 space-y-3"
+          className="w-full overflow-y-auto border-b lg:border-b-0 lg:border-r border-border p-4 sm:p-6"
           style={{
             flexBasis: `${leftPanePercent}%`,
             flexShrink: 0,
             flexGrow: 0,
           }}
         >
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            Thinking Steps (optional)
-          </p>
+          <h2 className="text-lg font-bold text-foreground mb-3">
+            Problem
+          </h2>
+          <div className="prose prose-sm prose-slate dark:prose-invert max-w-none">
+            <p className="text-foreground whitespace-pre-wrap leading-relaxed">
+              {challenge.problemStatement}
+            </p>
+          </div>
 
-          <HintPanel stepNumber={1} title="Understand" stepName="understand">
-            <SemiGuidedHintContent
-              step="understand"
-              challenge={challenge}
-            />
-          </HintPanel>
-
-          <HintPanel stepNumber={2} title="Break Down" stepName="breakdown">
-            <SemiGuidedHintContent
-              step="breakdown"
-              challenge={challenge}
-            />
-          </HintPanel>
-
-          <HintPanel stepNumber={3} title="Map to Code" stepName="map">
-            <SemiGuidedHintContent
-              step="map"
-              challenge={challenge}
-            />
-          </HintPanel>
+          {challenge.exampleCalls && (
+            <div className="mt-4">
+              <h3 className="text-sm font-semibold text-foreground mb-2">
+                Examples
+              </h3>
+              <pre className="rounded-lg bg-brand-navy p-3 text-sm font-mono text-brand-slate-100 overflow-x-auto">
+                {challenge.exampleCalls}
+              </pre>
+            </div>
+          )}
         </div>
 
         {/* Draggable divider - desktop only */}
@@ -193,7 +193,7 @@ export function SemiGuidedWorkspace({ challenge }: SemiGuidedWorkspaceProps) {
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Code editor */}
           <div className="flex-1 flex flex-col bg-brand-navy overflow-hidden min-h-[200px] lg:min-h-0">
-            <StepCodeEditor starterCode={semiGuidedStarterCode} />
+            <StepCodeEditor starterCode={independentStarterCode} />
           </div>
 
           {/* Verify section */}

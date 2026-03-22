@@ -31,6 +31,7 @@ interface ProgressState {
       concepts?: string[];
     },
   ) => void;
+  updateMode: (slug: string, mode: ChallengeMode) => void;
   recordAttempt: (slug: string, code: string) => void;
   addTime: (slug: string, seconds: number) => void;
   completeChallenge: (slug: string, code: string) => void;
@@ -146,6 +147,22 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
         savedRephrasing: data.rephrasing ?? current.savedRephrasing,
         savedBlockOrder: data.blockOrder ?? current.savedBlockOrder,
         savedConcepts: data.concepts ?? current.savedConcepts,
+      },
+    };
+    set({ challenges: updated });
+    persistToStorage(updated);
+  },
+
+  updateMode: (slug, mode) => {
+    const { challenges } = get();
+    const current = challenges[slug];
+    if (!current) return;
+
+    const updated = {
+      ...challenges,
+      [slug]: {
+        ...current,
+        mode,
       },
     };
     set({ challenges: updated });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { ChallengeDefinition } from "@/types/challenge";
 import type { ChallengeMode } from "@/types/progress";
 import { useChallengeStore } from "@/stores/challengeStore";
@@ -16,6 +17,8 @@ import { StepCodeEditor } from "./StepCodeEditor";
 import { StepVerify } from "./StepVerify";
 import { CompletionFlow } from "./CompletionFlow";
 import { SemiGuidedWorkspace } from "./SemiGuidedWorkspace";
+import { IndependentWorkspace } from "./IndependentWorkspace";
+import { ModeSelector } from "./ModeSelector";
 import { ToastContainer } from "@/components/ui/toast";
 import { getNextChallengeSlug } from "@/lib/challenges/track-1-fundamentals";
 
@@ -72,6 +75,10 @@ function DraggableDivider({
 }
 
 export function ChallengeWorkspace({ challenge, mode = "guided" }: ChallengeWorkspaceProps) {
+  if (mode === "independent") {
+    return <IndependentWorkspace challenge={challenge} />;
+  }
+
   if (mode === "semi_guided") {
     return <SemiGuidedWorkspace challenge={challenge} />;
   }
@@ -93,7 +100,9 @@ function GuidedWorkspace({ challenge }: { challenge: ChallengeDefinition }) {
     setChallengeCompleted,
   } = useChallengeStore();
 
-  const { hydrate, getProgress, initProgress, addTime } = useProgressStore();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { hydrate, getProgress, initProgress, addTime, updateMode } = useProgressStore();
   const { toasts, removeToast } = useAutoSave(challenge.slug);
 
   const [leftPanePercent, setLeftPanePercent] = useState(40);
@@ -131,6 +140,23 @@ function GuidedWorkspace({ challenge }: { challenge: ChallengeDefinition }) {
     completeStep("verify");
     setChallengeCompleted(true);
   }, [completeStep, setChallengeCompleted]);
+
+  const handleModeChange = useCallback(
+    (newMode: ChallengeMode) => {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("codereps:mode_switched", {
+            detail: { from_mode: "guided", to_mode: newMode },
+          }),
+        );
+      }
+      updateMode(challenge.slug, newMode);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("mode", newMode);
+      router.push(`/challenge/${challenge.slug}?${params.toString()}`);
+    },
+    [challenge.slug, router, searchParams, updateMode],
+  );
 
   const nextChallengeSlug = getNextChallengeSlug(challenge.slug);
 
@@ -208,13 +234,16 @@ function GuidedWorkspace({ challenge }: { challenge: ChallengeDefinition }) {
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
       <div className="border-b border-border bg-card px-4 py-3 sm:px-6">
-        <div className="mb-3">
-          <h1 className="text-xl font-bold text-foreground">
-            {challenge.title}
+        <div className="mb-3 flex items-start justify-between flex-wrap gap-2">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">
+              {challenge.title}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            {challenge.difficulty} &middot; ~{challenge.estimatedMinutes} min
-          </p>
+            <p className="text-sm text-muted-foreground">
+              {challenge.difficulty} &middot; ~{challenge.estimatedMinutes} min
+            </p>
+          </div>
+          <ModeSelector currentMode="guided" onModeChange={handleModeChange} />
         </div>
         <StepIndicator
           currentStep={currentStep}
