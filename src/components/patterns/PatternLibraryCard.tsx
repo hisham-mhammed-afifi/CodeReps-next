@@ -7,12 +7,14 @@ interface PatternLibraryCardProps {
   pattern: LibraryPattern;
   isUnlocked: boolean;
   onSelect: (pattern: LibraryPattern) => void;
+  showDomBadge?: boolean;
 }
 
 export function PatternLibraryCard({
   pattern,
   isUnlocked,
   onSelect,
+  showDomBadge = false,
 }: PatternLibraryCardProps) {
   if (!isUnlocked) {
     return (
@@ -28,9 +30,16 @@ export function PatternLibraryCard({
             />
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Locked
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Locked
+              </p>
+              {showDomBadge && (
+                <span className="inline-flex items-center rounded-full bg-brand-indigo/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  DOM
+                </span>
+              )}
+            </div>
             <h3 className="text-base font-semibold text-muted-foreground">
               {pattern.name}
             </h3>
@@ -58,9 +67,16 @@ export function PatternLibraryCard({
           />
         </div>
         <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Pattern Unlocked
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Pattern Unlocked
+            </p>
+            {showDomBadge && (
+              <span className="inline-flex items-center rounded-full bg-brand-indigo/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-indigo">
+                DOM
+              </span>
+            )}
+          </div>
           <h3 className="text-base font-bold text-brand-indigo">
             {pattern.name}
           </h3>

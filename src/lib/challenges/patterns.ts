@@ -11,6 +11,19 @@ export interface LibraryPattern extends PatternDefinition {
   trackSlug: string;
 }
 
+/** Track metadata keyed by trackSlug — driven by data, not hardcoded grouping */
+export const TRACK_META: Record<string, { title: string; order: number }> = {
+  fundamentals: { title: "Fundamentals", order: 1 },
+  "dom-manipulation": { title: "DOM Manipulation", order: 2 },
+};
+
+export interface TrackPatternGroup {
+  trackSlug: string;
+  trackTitle: string;
+  trackOrder: number;
+  patterns: LibraryPattern[];
+}
+
 /**
  * Extracts all patterns from all track challenge definitions,
  * enriched with source challenge metadata.
@@ -32,6 +45,38 @@ export function getAllPatterns(): LibraryPattern[] {
   }
 
   return patterns;
+}
+
+/**
+ * Groups patterns by track, sorted by track order.
+ * Uses track_id (trackSlug) on each pattern — no hardcoded grouping logic.
+ */
+export function getPatternsByTrack(): TrackPatternGroup[] {
+  const all = getAllPatterns();
+  const grouped = new Map<string, LibraryPattern[]>();
+
+  for (const pattern of all) {
+    const existing = grouped.get(pattern.trackSlug) ?? [];
+    existing.push(pattern);
+    grouped.set(pattern.trackSlug, existing);
+  }
+
+  const groups: TrackPatternGroup[] = [];
+  for (const [trackSlug, patterns] of grouped) {
+    const meta = TRACK_META[trackSlug] ?? {
+      title: trackSlug,
+      order: 999,
+    };
+    groups.push({
+      trackSlug,
+      trackTitle: meta.title,
+      trackOrder: meta.order,
+      patterns,
+    });
+  }
+
+  groups.sort((a, b) => a.trackOrder - b.trackOrder);
+  return groups;
 }
 
 export const TOTAL_PATTERNS = getAllPatterns().length;
