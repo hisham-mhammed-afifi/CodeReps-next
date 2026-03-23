@@ -28,6 +28,10 @@ interface ProgressState {
   getCompletedSlugs: () => string[];
   getTotalTimeSpent: () => number;
   getTotalAttempts: () => number;
+  getTrackCompletedCount: (trackSlug: string) => number;
+  getTrackCompletedSlugs: (trackSlug: string) => string[];
+  getTrackTotalTimeSpent: (trackSlug: string) => number;
+  getTrackTotalAttempts: (trackSlug: string) => number;
   isTrackCompleted: (trackSlug?: string) => boolean;
   isFirstAttempt: (slug: string) => boolean;
   hasStartedTrack: () => boolean;
@@ -141,6 +145,42 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       (total, p) => total + p.attempts,
       0,
     );
+  },
+
+  getTrackCompletedCount: (trackSlug) => {
+    const slugSet = TRACK_SLUGS[trackSlug];
+    if (!slugSet) return 0;
+    const { challenges } = get();
+    return Object.entries(challenges).filter(
+      ([slug, p]) => slugSet.has(slug) && p.status === "completed",
+    ).length;
+  },
+
+  getTrackCompletedSlugs: (trackSlug) => {
+    const slugSet = TRACK_SLUGS[trackSlug];
+    if (!slugSet) return [];
+    const { challenges } = get();
+    return Object.entries(challenges)
+      .filter(([slug, p]) => slugSet.has(slug) && p.status === "completed")
+      .map(([slug]) => slug);
+  },
+
+  getTrackTotalTimeSpent: (trackSlug) => {
+    const slugSet = TRACK_SLUGS[trackSlug];
+    if (!slugSet) return 0;
+    const { challenges } = get();
+    return Object.entries(challenges)
+      .filter(([slug]) => slugSet.has(slug))
+      .reduce((total, [, p]) => total + p.timeSpentSeconds, 0);
+  },
+
+  getTrackTotalAttempts: (trackSlug) => {
+    const slugSet = TRACK_SLUGS[trackSlug];
+    if (!slugSet) return 0;
+    const { challenges } = get();
+    return Object.entries(challenges)
+      .filter(([slug]) => slugSet.has(slug))
+      .reduce((total, [, p]) => total + p.attempts, 0);
   },
 
   isTrackCompleted: (trackSlug = "fundamentals") => {

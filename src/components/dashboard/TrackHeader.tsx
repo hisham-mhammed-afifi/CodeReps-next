@@ -1,12 +1,14 @@
 "use client";
 
-import { BookOpen } from "lucide-react";
+import { BookOpen, ShieldCheck, Star } from "lucide-react";
 
 interface TrackHeaderProps {
   title: string;
   description: string;
   completedCount: number;
   totalCount: number;
+  badgeName?: string | null;
+  badgeNoHints?: boolean;
 }
 
 export function TrackHeader({
@@ -14,6 +16,8 @@ export function TrackHeader({
   description,
   completedCount,
   totalCount,
+  badgeName = null,
+  badgeNoHints = false,
 }: TrackHeaderProps) {
   const progressPercent =
     totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
@@ -28,6 +32,24 @@ export function TrackHeader({
           <h1 className="text-2xl font-bold text-foreground">{title}</h1>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
+
+        {badgeName && (
+          <div className="ml-auto flex items-center gap-1.5 rounded-lg bg-brand-indigo/10 px-3 py-1.5">
+            <ShieldCheck
+              className="h-4 w-4 text-brand-indigo"
+              aria-hidden="true"
+            />
+            <span className="text-xs font-semibold text-brand-indigo">
+              {badgeName}
+            </span>
+            {badgeNoHints && (
+              <Star
+                className="h-3 w-3 fill-brand-amber text-brand-amber"
+                aria-hidden="true"
+              />
+            )}
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">
