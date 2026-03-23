@@ -3,6 +3,8 @@
 import { useState, useCallback } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useChallengeStore } from "@/stores/challengeStore";
+import { useProgressStore } from "@/stores/progressStore";
 
 interface HintPanelProps {
   stepNumber: number;
@@ -25,6 +27,11 @@ export function HintPanel({
       if (willOpen) {
         // Track hint_panel_opened analytics event
         console.log("[analytics] hint_panel_opened", { step: stepName });
+        // Record hint usage for badge distinction tracking
+        const challenge = useChallengeStore.getState().challenge;
+        if (challenge) {
+          useProgressStore.getState().markHintsUsed(challenge.slug);
+        }
       }
       return willOpen;
     });

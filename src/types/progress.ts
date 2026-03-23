@@ -20,6 +20,8 @@ export interface UserProgress {
   savedBlockOrder: string[] | null;
   /** Saved selected concepts for Step 3 */
   savedConcepts: string[] | null;
+  /** Whether the user opened any hint panels during this challenge */
+  hintsUsed?: boolean;
 }
 
 export interface TrackProgress {

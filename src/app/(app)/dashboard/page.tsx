@@ -6,6 +6,9 @@ import { Trophy } from "lucide-react";
 import { getAllChallenges } from "@/lib/challenges/track-1-fundamentals";
 import { getAllPatterns, TOTAL_PATTERNS } from "@/lib/challenges/patterns";
 import { useProgressStore } from "@/stores/progressStore";
+import { useBadgeStore } from "@/stores/badgeStore";
+import { getBadgeBySlug } from "@/lib/badges/definitions";
+import { BadgeCard } from "@/components/badges/BadgeCard";
 import { TrackHeader } from "@/components/dashboard/TrackHeader";
 import { ChallengeCard } from "@/components/dashboard/ChallengeCard";
 import { ChallengeCardSkeleton } from "@/components/dashboard/ChallengeCardSkeleton";
@@ -28,9 +31,16 @@ export default function DashboardPage() {
     isTrackCompleted,
   } = useProgressStore();
 
+  const {
+    hydrate: hydrateBadges,
+    hydrated: badgesHydrated,
+    getAllEarnedBadges,
+  } = useBadgeStore();
+
   useEffect(() => {
     hydrate();
-  }, [hydrate]);
+    hydrateBadges();
+  }, [hydrate, hydrateBadges]);
 
   const challenges = getAllChallenges();
   const allPatterns = getAllPatterns();
@@ -111,6 +121,27 @@ export default function DashboardPage() {
             </p>
           </div>
         </Link>
+      )}
+
+      {badgesHydrated && getAllEarnedBadges().length > 0 && (
+        <div className="mt-6">
+          <h2 className="mb-3 text-sm font-semibold text-foreground">
+            Badges
+          </h2>
+          <div className="space-y-3">
+            {getAllEarnedBadges().map((earned) => {
+              const def = getBadgeBySlug(earned.badgeSlug);
+              if (!def) return null;
+              return (
+                <BadgeCard
+                  key={earned.badgeSlug}
+                  badge={def}
+                  earned={earned}
+                />
+              );
+            })}
+          </div>
+        </div>
       )}
 
       <div className="mt-6">

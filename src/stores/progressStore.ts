@@ -32,6 +32,7 @@ interface ProgressState {
   isFirstAttempt: (slug: string) => boolean;
   hasStartedTrack: () => boolean;
 
+  markHintsUsed: (slug: string) => void;
   initProgress: (slug: string, mode?: ChallengeMode) => void;
   saveStepProgress: (
     slug: string,
@@ -159,6 +160,19 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
 
   hasStartedTrack: () => {
     return Object.keys(get().challenges).length > 0;
+  },
+
+  markHintsUsed: (slug) => {
+    const { challenges } = get();
+    const current = challenges[slug];
+    if (!current || current.hintsUsed) return;
+
+    const updated = {
+      ...challenges,
+      [slug]: { ...current, hintsUsed: true },
+    };
+    set({ challenges: updated });
+    persistToStorage(updated);
   },
 
   initProgress: (slug, mode = "guided") => {
