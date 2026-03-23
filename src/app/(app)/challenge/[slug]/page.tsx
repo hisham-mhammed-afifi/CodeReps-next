@@ -31,7 +31,7 @@ export default async function ChallengePage({
       : undefined;
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <ChallengeWorkspace
         challenge={challenge}
         requestedMode={requestedMode}

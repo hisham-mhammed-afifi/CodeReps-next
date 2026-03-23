@@ -29,7 +29,7 @@ export function Track2RevisitBanner() {
             intact.
           </p>
           <Link
-            href="/dashboard"
+            href="/dashboard?track=dom-manipulation"
             className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-indigo"
           >
             <LayoutGrid className="h-4 w-4" aria-hidden="true" />

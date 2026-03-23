@@ -102,9 +102,13 @@ export function CompletionFlow({
           transition={{ delay: 0.8 + challenge.patternsUnlocked.length * 0.3 }}
           className="flex flex-wrap items-center gap-3 pt-2"
         >
-          {!nextChallengeSlug && isTrackComplete() ? (
+          {!nextChallengeSlug && isTrackComplete(challenge.trackSlug) ? (
             <a
-              href="/track-complete"
+              href={
+                challenge.trackSlug === "dom-manipulation"
+                  ? "/track-2-complete"
+                  : "/track-complete"
+              }
               className={cn(
                 buttonVariants({ variant: "default" }),
                 "gap-2 bg-brand-emerald hover:bg-brand-emerald/90",
@@ -126,7 +130,7 @@ export function CompletionFlow({
             </a>
           ) : null}
           <a
-            href="/dashboard"
+            href={`/dashboard?track=${challenge.trackSlug}`}
             className={cn(buttonVariants({ variant: "outline" }), "gap-2")}
           >
             <LayoutGrid className="h-4 w-4" />
