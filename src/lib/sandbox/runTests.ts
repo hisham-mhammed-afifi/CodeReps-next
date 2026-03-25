@@ -42,7 +42,8 @@ function buildPureJSScript(userCode: string, testCases: TestCase[]): string {
           try {
             const actual = eval(tc.input);
             const actualStr = actual === undefined ? "undefined" : JSON.stringify(actual);
-            const expectedStr = tc.expected;
+            let expectedStr;
+            try { expectedStr = JSON.stringify(JSON.parse(tc.expected)); } catch { expectedStr = tc.expected; }
             // Compare JSON-stringified values
             return {
               input: tc.input,
@@ -103,7 +104,8 @@ ${starterHTML}
       try {
         var actual = eval(tc.input);
         var actualStr = actual === undefined ? "undefined" : JSON.stringify(actual);
-        var expectedStr = tc.expected;
+        var expectedStr;
+        try { expectedStr = JSON.stringify(JSON.parse(tc.expected)); } catch(e) { expectedStr = tc.expected; }
         return {
           input: tc.input,
           expected: tc.expected,

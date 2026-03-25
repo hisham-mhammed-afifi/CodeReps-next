@@ -1,6 +1,19 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-export const proxy = clerkMiddleware();
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/dashboard(.*)",
+  "/challenge(.*)",
+  "/track-complete(.*)",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+]);
+
+export const proxy = clerkMiddleware(async (auth, request) => {
+  if (!isPublicRoute(request)) {
+    await auth.protect();
+  }
+});
 
 export const config = {
   matcher: [

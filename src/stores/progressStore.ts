@@ -99,7 +99,17 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   hydrate: () => {
     if (get().hydrated) return;
     const stored = loadFromStorage();
-    set({ challenges: stored, hydrated: true });
+    const allValidSlugs = new Set(
+      Object.values(TRACK_SLUGS).flatMap((s) => [...s]),
+    );
+    const cleaned: Record<string, UserProgress> = {};
+    for (const [slug, progress] of Object.entries(stored)) {
+      if (allValidSlugs.has(slug)) cleaned[slug] = progress;
+    }
+    if (Object.keys(cleaned).length !== Object.keys(stored).length) {
+      persistToStorage(cleaned);
+    }
+    set({ challenges: cleaned, hydrated: true });
   },
 
   getProgress: (slug) => {

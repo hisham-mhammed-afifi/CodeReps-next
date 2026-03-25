@@ -19,8 +19,9 @@ export function TrackHeader({
   badgeName = null,
   badgeNoHints = false,
 }: TrackHeaderProps) {
+  const clampedCount = Math.min(completedCount, totalCount);
   const progressPercent =
-    totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+    totalCount > 0 ? Math.round((clampedCount / totalCount) * 100) : 0;
 
   return (
     <div className="space-y-4">
@@ -55,7 +56,7 @@ export function TrackHeader({
       <div className="space-y-2">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
-            {completedCount} of {totalCount} challenges completed
+            {clampedCount} of {totalCount} challenges completed
           </span>
           <span className="font-medium text-foreground">
             {progressPercent}%
