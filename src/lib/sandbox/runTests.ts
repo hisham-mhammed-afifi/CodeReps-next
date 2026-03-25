@@ -67,7 +67,12 @@ export function runTests(
             try {
               const actual = eval(tc.input);
               const actualStr = JSON.stringify(actual);
-              const expectedStr = tc.expected;
+              let expectedStr;
+              try {
+                expectedStr = JSON.stringify(JSON.parse(tc.expected));
+              } catch {
+                expectedStr = tc.expected;
+              }
               // Compare JSON-stringified values
               return {
                 input: tc.input,

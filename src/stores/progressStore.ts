@@ -4,6 +4,7 @@ import type {
   ChallengeStatus,
   ChallengeMode,
 } from "@/types/progress";
+import { track1Challenges } from "@/lib/challenges/track-1-fundamentals";
 
 const STORAGE_KEY = "codereps-track1-progress";
 
@@ -87,7 +88,15 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   hydrate: () => {
     if (get().hydrated) return;
     const stored = loadFromStorage();
-    set({ challenges: stored, hydrated: true });
+    const validSlugs = new Set(track1Challenges.map((c) => c.slug));
+    const cleaned: Record<string, UserProgress> = {};
+    for (const [slug, progress] of Object.entries(stored)) {
+      if (validSlugs.has(slug)) cleaned[slug] = progress;
+    }
+    if (Object.keys(cleaned).length !== Object.keys(stored).length) {
+      persistToStorage(cleaned);
+    }
+    set({ challenges: cleaned, hydrated: true });
   },
 
   getProgress: (slug) => {
@@ -136,8 +145,11 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   },
 
   isTrackCompleted: () => {
-    const TOTAL_TRACK_1_CHALLENGES = 15;
-    return get().getCompletedCount() >= TOTAL_TRACK_1_CHALLENGES;
+    const validSlugs = track1Challenges.map((c) => c.slug);
+    const completedCount = Object.entries(get().challenges).filter(
+      ([slug, p]) => validSlugs.includes(slug) && p.status === "completed",
+    ).length;
+    return completedCount >= validSlugs.length;
   },
 
   isFirstAttempt: (slug) => {
