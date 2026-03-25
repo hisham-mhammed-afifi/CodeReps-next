@@ -10,9 +10,13 @@ import { useAutoSave } from "@/hooks/useAutoSave";
 import { useTimeTracker } from "@/hooks/useTimeTracker";
 import {
   getAvailableModes,
+  getDefaultMode,
   enforceMode,
   shouldShowModePrompt,
   shouldEncourageIndependent,
+  shouldHighlightSemiGuided,
+  getModePromptMessage,
+  getCapstoneNote,
 } from "@/lib/challenges/mode-rules";
 import { StepIndicator } from "./StepIndicator";
 import { StepTransition } from "./StepTransition";
@@ -28,6 +32,8 @@ import { ModeSelector } from "./ModeSelector";
 import { ModePrompt } from "./ModePrompt";
 import { ToastContainer } from "@/components/ui/toast";
 import { getNextChallengeSlug } from "@/lib/challenges/track-1-fundamentals";
+import { LivePreviewPanel } from "./LivePreviewPanel";
+import { HorizontalDraggableDivider } from "./HorizontalDraggableDivider";
 
 interface ChallengeWorkspaceProps {
   challenge: ChallengeDefinition;
@@ -99,12 +105,13 @@ export function ChallengeWorkspace({
   }, [hydrate]);
 
   // Derive mode context from store state (no setState in effects)
-  const trackCompleted = hydrated ? isTrackCompleted() : false;
+  const trackSlug = challenge.trackSlug;
+  const trackCompleted = hydrated ? isTrackCompleted(trackSlug) : false;
   const firstAttempt = hydrated ? isFirstAttempt(challenge.slug) : true;
 
   const availableModes = useMemo(
-    () => getAvailableModes(challenge.order, trackCompleted, firstAttempt),
-    [challenge.order, trackCompleted, firstAttempt],
+    () => getAvailableModes(challenge.order, trackCompleted, firstAttempt, trackSlug),
+    [challenge.order, trackCompleted, firstAttempt, trackSlug],
   );
 
   const encourageIndependent = useMemo(
@@ -112,9 +119,29 @@ export function ChallengeWorkspace({
     [challenge.order, trackCompleted],
   );
 
+  const highlightSemiGuided = useMemo(
+    () => shouldHighlightSemiGuided(challenge.order, trackCompleted, trackSlug),
+    [challenge.order, trackCompleted, trackSlug],
+  );
+
+  const defaultMode = useMemo(
+    () => getDefaultMode(challenge.order, trackSlug),
+    [challenge.order, trackSlug],
+  );
+
+  const promptMessage = useMemo(
+    () => getModePromptMessage(challenge.order, trackSlug),
+    [challenge.order, trackSlug],
+  );
+
+  const capstoneNote = useMemo(
+    () => getCapstoneNote(challenge.order, trackSlug),
+    [challenge.order, trackSlug],
+  );
+
   const needsPrompt = useMemo(
-    () => shouldShowModePrompt(challenge.order, trackCompleted, firstAttempt),
-    [challenge.order, trackCompleted, firstAttempt],
+    () => shouldShowModePrompt(challenge.order, trackCompleted, firstAttempt, trackSlug),
+    [challenge.order, trackCompleted, firstAttempt, trackSlug],
   );
 
   // Determine the active mode: user selection > URL request > auto
@@ -126,7 +153,7 @@ export function ChallengeWorkspace({
 
     // If a mode was requested via URL, enforce it
     if (requestedMode) {
-      return enforceMode(requestedMode, challenge.order, trackCompleted, firstAttempt);
+      return enforceMode(requestedMode, challenge.order, trackCompleted, firstAttempt, trackSlug);
     }
 
     // Single available mode — use it directly
@@ -135,8 +162,8 @@ export function ChallengeWorkspace({
     // Multiple modes, no URL mode, no user selection yet — show prompt
     if (needsPrompt) return null;
 
-    return "guided";
-  }, [hydrated, userSelectedMode, requestedMode, challenge.order, trackCompleted, firstAttempt, availableModes, needsPrompt]);
+    return defaultMode;
+  }, [hydrated, userSelectedMode, requestedMode, challenge.order, trackCompleted, firstAttempt, trackSlug, availableModes, needsPrompt, defaultMode]);
 
   const handlePromptSelect = useCallback(
     (mode: ChallengeMode) => {
@@ -161,6 +188,10 @@ export function ChallengeWorkspace({
         challengeTitle={challenge.title}
         availableModes={availableModes}
         encourageIndependent={encourageIndependent}
+        highlightSemiGuided={highlightSemiGuided}
+        defaultMode={defaultMode}
+        promptMessage={promptMessage}
+        capstoneNote={capstoneNote}
         onSelect={handlePromptSelect}
       />
     );
@@ -227,7 +258,16 @@ function GuidedWorkspace({
   const { toasts, removeToast } = useAutoSave(challenge.slug);
 
   const [leftPanePercent, setLeftPanePercent] = useState(40);
+  const [editorSplit, setEditorSplit] = useState({ slug: challenge.slug, percent: 60 });
+  if (editorSplit.slug !== challenge.slug) {
+    setEditorSplit({ slug: challenge.slug, percent: 60 });
+  }
+  const editorHeightPercent = editorSplit.percent;
+  const setEditorHeightPercent = useCallback((updater: (prev: number) => number) => {
+    setEditorSplit((prev) => ({ ...prev, percent: updater(prev.percent) }));
+  }, []);
   const containerRef = useRef<HTMLDivElement>(null);
+  const rightPaneRef = useRef<HTMLDivElement>(null);
 
   // Hydrate progress store and restore saved progress
   useEffect(() => {
@@ -256,6 +296,18 @@ function GuidedWorkspace({
       Math.min(70, Math.max(25, prev + deltaPercent)),
     );
   }, []);
+
+  const handleHorizontalDrag = useCallback((deltaY: number) => {
+    if (!rightPaneRef.current) return;
+    const paneHeight = rightPaneRef.current.offsetHeight;
+    // Enforce min 200px for both editor and preview
+    const minPercent = (200 / paneHeight) * 100;
+    const maxPercent = 100 - minPercent;
+    const deltaPercent = (deltaY / paneHeight) * 100;
+    setEditorHeightPercent((prev) =>
+      Math.min(maxPercent, Math.max(minPercent, prev + deltaPercent)),
+    );
+  }, [setEditorHeightPercent]);
 
   const handleAllTestsPassed = useCallback(() => {
     completeStep("verify");
@@ -336,6 +388,9 @@ function GuidedWorkspace({
             <StepVerify
               testCases={challenge.testCases}
               onAllPassed={handleAllTestsPassed}
+              starterHTML={challenge.starterHTML}
+              starterCSS={challenge.starterCSS}
+              domTestCases={challenge.domTestCases}
             />
             {challengeCompleted && (
               <CompletionFlow
@@ -400,19 +455,36 @@ function GuidedWorkspace({
         {/* Draggable divider - desktop only */}
         <DraggableDivider onDrag={handleDividerDrag} />
 
-        {/* Code editor pane */}
-        <div className="flex-1 flex flex-col bg-brand-navy overflow-hidden min-h-[200px] lg:min-h-0">
-          {isOnWriteOrVerify ? (
-            <StepCodeEditor starterCode={challenge.starterCode} />
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-brand-slate-400 p-8">
-              <div className="text-center space-y-2">
-                <p className="font-mono text-sm">Code editor</p>
-                <p className="text-xs text-brand-slate-400/60">
-                  Available after completing Steps 1-3
-                </p>
+        {/* Code editor pane + optional preview */}
+        <div ref={rightPaneRef} className="flex-1 flex flex-col overflow-hidden min-h-[200px] lg:min-h-0">
+          <div
+            className="flex flex-col bg-brand-navy overflow-hidden"
+            style={challenge.requiresPreview ? { flexBasis: `${editorHeightPercent}%`, flexShrink: 0, flexGrow: 0 } : { flex: 1 }}
+          >
+            {isOnWriteOrVerify ? (
+              <StepCodeEditor starterCode={challenge.starterCode} />
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-brand-slate-400 p-8">
+                <div className="text-center space-y-2">
+                  <p className="font-mono text-sm">Code editor</p>
+                  <p className="text-xs text-brand-slate-400/60">
+                    Available after completing Steps 1-3
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
+          </div>
+          {challenge.requiresPreview && challenge.starterHTML && (
+            <>
+              <HorizontalDraggableDivider onDrag={handleHorizontalDrag} />
+              <div className="flex-1 overflow-hidden">
+                <LivePreviewPanel
+                  starterHTML={challenge.starterHTML}
+                  starterCSS={challenge.starterCSS}
+                  isFirstChallenge={challenge.order === 1}
+                />
+              </div>
+            </>
           )}
         </div>
       </div>

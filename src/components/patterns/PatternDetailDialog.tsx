@@ -83,9 +83,16 @@ export function PatternDetailDialog({
                 />
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Pattern
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Pattern
+                  </p>
+                  {pattern.trackSlug === "dom-manipulation" && (
+                    <span className="inline-flex items-center rounded-full bg-brand-indigo/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-indigo">
+                      DOM
+                    </span>
+                  )}
+                </div>
                 <h2 className="text-lg font-bold text-brand-indigo">
                   {pattern.name}
                 </h2>

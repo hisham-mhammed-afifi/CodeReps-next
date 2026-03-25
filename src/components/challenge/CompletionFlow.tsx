@@ -12,6 +12,8 @@ import { ToastContainer } from "@/components/ui/toast";
 import { useToast } from "@/hooks/useToast";
 import { useProgressStore } from "@/stores/progressStore";
 import { useChallengeStore } from "@/stores/challengeStore";
+import { useBadgeStore } from "@/stores/badgeStore";
+import { checkAndAwardDomBuilderBadge } from "@/lib/badges/award-logic";
 import type { ChallengeDefinition } from "@/types/challenge";
 
 interface CompletionFlowProps {
@@ -29,14 +31,31 @@ export function CompletionFlow({
   const persistedRef = useRef(false);
   const isTrackComplete = useProgressStore((s) => s.isTrackCompleted);
 
-  // Persist completion to progress store (once)
+  // Persist completion to progress store and check badge eligibility (once)
   useEffect(() => {
     if (persistedRef.current) return;
     persistedRef.current = true;
 
     const { userCode } = useChallengeStore.getState();
     useProgressStore.getState().completeChallenge(challenge.slug, userCode);
-  }, [challenge.slug]);
+
+    // Check badge eligibility after completion is persisted
+    if (challenge.trackSlug === "dom-manipulation") {
+      useBadgeStore.getState().hydrate();
+      const awarded = checkAndAwardDomBuilderBadge();
+      if (awarded) {
+        const badge = useBadgeStore.getState().getBadge("dom-builder");
+        const noHints = badge?.metadata?.no_hints;
+        setTimeout(() => {
+          addToast(
+            noHints
+              ? "Badge earned: DOM Builder (completed without hints!)"
+              : "Badge earned: DOM Builder",
+          );
+        }, 1200);
+      }
+    }
+  }, [challenge.slug, challenge.trackSlug, addToast]);
 
   // Fire toast notifications for each pattern (once)
   const handleConfettiDismiss = useCallback(() => {
@@ -83,9 +102,13 @@ export function CompletionFlow({
           transition={{ delay: 0.8 + challenge.patternsUnlocked.length * 0.3 }}
           className="flex flex-wrap items-center gap-3 pt-2"
         >
-          {!nextChallengeSlug && isTrackComplete() ? (
+          {!nextChallengeSlug && isTrackComplete(challenge.trackSlug) ? (
             <a
-              href="/track-complete"
+              href={
+                challenge.trackSlug === "dom-manipulation"
+                  ? "/track-2-complete"
+                  : "/track-complete"
+              }
               className={cn(
                 buttonVariants({ variant: "default" }),
                 "gap-2 bg-brand-emerald hover:bg-brand-emerald/90",
@@ -107,7 +130,7 @@ export function CompletionFlow({
             </a>
           ) : null}
           <a
-            href="/dashboard"
+            href={`/dashboard?track=${challenge.trackSlug}`}
             className={cn(buttonVariants({ variant: "outline" }), "gap-2")}
           >
             <LayoutGrid className="h-4 w-4" />

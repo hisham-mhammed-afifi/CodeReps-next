@@ -8,10 +8,12 @@ export interface TestResult {
   expected: string;
   actual: string;
   passed: boolean;
+  /** "Function output" for return-value tests, "Page state" for DOM assertions */
+  category?: "Function output" | "Page state";
 }
 
 export type TestRunResult =
-  | { status: "success"; results: TestResult[] }
+  | { status: "success"; results: TestResult[]; resultHTML?: string }
   | { status: "error"; error: string; line?: number }
   | { status: "timeout" };
 
@@ -33,6 +35,15 @@ export interface PatternDefinition {
   codeExample: string;
 }
 
+export interface DomTestCase {
+  label: string;
+  selector: string;
+  assertion: "exists" | "textContent" | "classList" | "childCount" | "attribute";
+  expected: string | number | boolean;
+  /** Optional attribute name for "attribute" assertion type */
+  attributeName?: string;
+}
+
 export interface ChallengeDefinition {
   id: string;
   slug: string;
@@ -52,6 +63,14 @@ export interface ChallengeDefinition {
   explanation: string;
   testCases: TestCase[];
   patternsUnlocked: PatternDefinition[];
+  /** Track 2+: HTML that renders in the Live Preview Panel */
+  starterHTML?: string;
+  /** Track 2+: CSS for visual presentation of the starter HTML */
+  starterCSS?: string;
+  /** Track 2+: Whether this challenge needs the Live Preview Panel */
+  requiresPreview?: boolean;
+  /** Track 2+: DOM-specific test assertions */
+  domTestCases?: DomTestCase[];
 }
 
 export type StepId = "understand" | "breakdown" | "map" | "write" | "verify";

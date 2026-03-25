@@ -5,8 +5,14 @@ import type {
   ChallengeMode,
 } from "@/types/progress";
 import { track1Challenges } from "@/lib/challenges/track-1-fundamentals";
+import { track2Challenges } from "@/lib/challenges/dom-manipulation";
 
 const STORAGE_KEY = "codereps-track1-progress";
+
+const TRACK_SLUGS: Record<string, Set<string>> = {
+  fundamentals: new Set(track1Challenges.map((c) => c.slug)),
+  "dom-manipulation": new Set(track2Challenges.map((c) => c.slug)),
+};
 
 interface ProgressState {
   /** Map of challenge slug -> UserProgress */
@@ -22,10 +28,15 @@ interface ProgressState {
   getCompletedSlugs: () => string[];
   getTotalTimeSpent: () => number;
   getTotalAttempts: () => number;
-  isTrackCompleted: () => boolean;
+  getTrackCompletedCount: (trackSlug: string) => number;
+  getTrackCompletedSlugs: (trackSlug: string) => string[];
+  getTrackTotalTimeSpent: (trackSlug: string) => number;
+  getTrackTotalAttempts: (trackSlug: string) => number;
+  isTrackCompleted: (trackSlug?: string) => boolean;
   isFirstAttempt: (slug: string) => boolean;
   hasStartedTrack: () => boolean;
 
+  markHintsUsed: (slug: string) => void;
   initProgress: (slug: string, mode?: ChallengeMode) => void;
   saveStepProgress: (
     slug: string,
@@ -88,10 +99,12 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   hydrate: () => {
     if (get().hydrated) return;
     const stored = loadFromStorage();
-    const validSlugs = new Set(track1Challenges.map((c) => c.slug));
+    const allValidSlugs = new Set(
+      Object.values(TRACK_SLUGS).flatMap((s) => [...s]),
+    );
     const cleaned: Record<string, UserProgress> = {};
     for (const [slug, progress] of Object.entries(stored)) {
-      if (validSlugs.has(slug)) cleaned[slug] = progress;
+      if (allValidSlugs.has(slug)) cleaned[slug] = progress;
     }
     if (Object.keys(cleaned).length !== Object.keys(stored).length) {
       persistToStorage(cleaned);
@@ -144,12 +157,50 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     );
   },
 
-  isTrackCompleted: () => {
-    const validSlugs = track1Challenges.map((c) => c.slug);
-    const completedCount = Object.entries(get().challenges).filter(
-      ([slug, p]) => validSlugs.includes(slug) && p.status === "completed",
+  getTrackCompletedCount: (trackSlug) => {
+    const slugSet = TRACK_SLUGS[trackSlug];
+    if (!slugSet) return 0;
+    const { challenges } = get();
+    return Object.entries(challenges).filter(
+      ([slug, p]) => slugSet.has(slug) && p.status === "completed",
     ).length;
-    return completedCount >= validSlugs.length;
+  },
+
+  getTrackCompletedSlugs: (trackSlug) => {
+    const slugSet = TRACK_SLUGS[trackSlug];
+    if (!slugSet) return [];
+    const { challenges } = get();
+    return Object.entries(challenges)
+      .filter(([slug, p]) => slugSet.has(slug) && p.status === "completed")
+      .map(([slug]) => slug);
+  },
+
+  getTrackTotalTimeSpent: (trackSlug) => {
+    const slugSet = TRACK_SLUGS[trackSlug];
+    if (!slugSet) return 0;
+    const { challenges } = get();
+    return Object.entries(challenges)
+      .filter(([slug]) => slugSet.has(slug))
+      .reduce((total, [, p]) => total + p.timeSpentSeconds, 0);
+  },
+
+  getTrackTotalAttempts: (trackSlug) => {
+    const slugSet = TRACK_SLUGS[trackSlug];
+    if (!slugSet) return 0;
+    const { challenges } = get();
+    return Object.entries(challenges)
+      .filter(([slug]) => slugSet.has(slug))
+      .reduce((total, [, p]) => total + p.attempts, 0);
+  },
+
+  isTrackCompleted: (trackSlug = "fundamentals") => {
+    const slugSet = TRACK_SLUGS[trackSlug];
+    if (!slugSet) return false;
+    const { challenges } = get();
+    const completed = Object.entries(challenges).filter(
+      ([slug, p]) => slugSet.has(slug) && p.status === "completed",
+    ).length;
+    return completed >= slugSet.size;
   },
 
   isFirstAttempt: (slug) => {
@@ -159,6 +210,19 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
 
   hasStartedTrack: () => {
     return Object.keys(get().challenges).length > 0;
+  },
+
+  markHintsUsed: (slug) => {
+    const { challenges } = get();
+    const current = challenges[slug];
+    if (!current || current.hintsUsed) return;
+
+    const updated = {
+      ...challenges,
+      [slug]: { ...current, hintsUsed: true },
+    };
+    set({ challenges: updated });
+    persistToStorage(updated);
   },
 
   initProgress: (slug, mode = "guided") => {

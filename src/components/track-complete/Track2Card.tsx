@@ -1,31 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Bell, Check, Monitor } from "lucide-react";
-
-const NOTIFY_STORAGE_KEY = "codereps-track2-notify";
-
-function getStoredNotify(): boolean {
-  try {
-    return localStorage.getItem(NOTIFY_STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
+import { ArrowRight, Monitor } from "lucide-react";
 
 export function Track2Card() {
-  const [notifyRequested, setNotifyRequested] = useState(getStoredNotify);
-
-  function handleNotify() {
-    setNotifyRequested(true);
-    try {
-      localStorage.setItem(NOTIFY_STORAGE_KEY, "true");
-    } catch {
-      // localStorage unavailable
-    }
-  }
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -46,8 +25,8 @@ export function Track2Card() {
             <h3 className="text-lg font-bold text-foreground">
               Track 2: DOM Manipulation
             </h3>
-            <span className="rounded-full bg-brand-amber/10 px-2.5 py-0.5 text-xs font-medium text-brand-amber">
-              Coming soon
+            <span className="rounded-full bg-brand-emerald/10 px-2.5 py-0.5 text-xs font-medium text-brand-emerald">
+              New
             </span>
           </div>
 
@@ -57,21 +36,14 @@ export function Track2Card() {
             responding to user actions.
           </p>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            {notifyRequested ? (
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-emerald">
-                <Check className="h-4 w-4" aria-hidden="true" />
-                You&apos;ll be notified when Track 2 launches
-              </span>
-            ) : (
-              <button
-                onClick={handleNotify}
-                className="inline-flex items-center gap-2 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-indigo/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-indigo"
-              >
-                <Bell className="h-4 w-4" aria-hidden="true" />
-                Notify me when it launches
-              </button>
-            )}
+          <div className="mt-4">
+            <Link
+              href="/dashboard?track=dom-manipulation"
+              className="inline-flex items-center gap-2 rounded-lg bg-brand-indigo px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-indigo/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-indigo"
+            >
+              Begin Track 2
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
           </div>
 
           <p className="mt-3 text-xs text-muted-foreground">

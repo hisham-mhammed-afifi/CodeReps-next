@@ -2,19 +2,19 @@
 
 import { useState, useCallback } from "react";
 import { Puzzle } from "lucide-react";
-import type { LibraryPattern } from "@/lib/challenges/patterns";
+import type { LibraryPattern, TrackPatternGroup } from "@/lib/challenges/patterns";
 import { PatternLibraryCard } from "./PatternLibraryCard";
 import { PatternDetailDialog } from "./PatternDetailDialog";
 
 interface PatternLibraryGridProps {
-  patterns: LibraryPattern[];
+  trackGroups: TrackPatternGroup[];
   unlockedSlugs: Set<string>;
   unlockedCount: number;
   totalCount: number;
 }
 
 export function PatternLibraryGrid({
-  patterns,
+  trackGroups,
   unlockedSlugs,
   unlockedCount,
   totalCount,
@@ -54,7 +54,7 @@ export function PatternLibraryGrid({
           </div>
         </div>
 
-        {/* Progress indicator */}
+        {/* Cumulative progress indicator spanning both tracks */}
         <div className="mt-4">
           <div className="flex items-center justify-between mb-1.5">
             <span
@@ -83,25 +83,41 @@ export function PatternLibraryGrid({
         </div>
       </div>
 
-      {/* Pattern grid */}
-      <div
-        className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
-        role="list"
-        aria-label="Pattern cards"
-      >
-        {patterns.map((pattern) => {
-          const isUnlocked = unlockedSlugs.has(pattern.challengeSlug);
-          return (
-            <div key={`${pattern.challengeSlug}-${pattern.name}`} role="listitem">
-              <PatternLibraryCard
-                pattern={pattern}
-                isUnlocked={isUnlocked}
-                onSelect={handleSelect}
-              />
+      {/* Pattern sections grouped by track */}
+      {trackGroups.map((group) => {
+        const isDom = group.trackSlug === "dom-manipulation";
+
+        return (
+          <section key={group.trackSlug} className="mb-10 last:mb-0">
+            <h2 className="text-lg font-bold text-foreground mb-4">
+              {group.trackTitle}
+            </h2>
+
+            <div
+              className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+              role="list"
+              aria-label={`${group.trackTitle} pattern cards`}
+            >
+              {group.patterns.map((pattern) => {
+                const isUnlocked = unlockedSlugs.has(pattern.challengeSlug);
+                return (
+                  <div
+                    key={`${pattern.challengeSlug}-${pattern.name}`}
+                    role="listitem"
+                  >
+                    <PatternLibraryCard
+                      pattern={pattern}
+                      isUnlocked={isUnlocked}
+                      onSelect={handleSelect}
+                      showDomBadge={isDom}
+                    />
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
+          </section>
+        );
+      })}
 
       {/* Detail dialog */}
       <PatternDetailDialog

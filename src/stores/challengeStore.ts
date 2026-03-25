@@ -20,6 +20,10 @@ interface ChallengeState {
   allTestsPassed: boolean;
   challengeCompleted: boolean;
   attempts: number;
+  /** Track 2+: The current HTML rendered in the Live Preview Panel */
+  previewHTML: string | null;
+  /** Track 2+: Whether the last code run produced a preview error */
+  previewError: boolean;
 
   setChallenge: (challenge: ChallengeDefinition, savedProgress?: UserProgress | null) => void;
   setMode: (mode: ChallengeMode) => void;
@@ -42,6 +46,10 @@ interface ChallengeState {
   isStepSubmitted: (step: StepId) => boolean;
   incrementAttempts: () => void;
   advanceToNextStep: () => void;
+  /** Track 2+: Update the preview panel HTML after code execution */
+  setPreviewHTML: (html: string) => void;
+  /** Track 2+: Reset preview to starter HTML (e.g., on error) */
+  resetPreview: () => void;
   reset: () => void;
 }
 
@@ -86,6 +94,8 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
   allTestsPassed: false,
   challengeCompleted: false,
   attempts: 0,
+  previewHTML: null,
+  previewError: false,
 
   setChallenge: (challenge, savedProgress) => {
     if (savedProgress && savedProgress.status !== "not_started") {
@@ -131,6 +141,8 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
         allTestsPassed: isCompleted,
         challengeCompleted: isCompleted,
         attempts: savedProgress.attempts,
+        previewHTML: challenge.starterHTML ?? null,
+        previewError: false,
       });
     } else {
       set({
@@ -156,6 +168,8 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
         allTestsPassed: false,
         challengeCompleted: false,
         attempts: 0,
+        previewHTML: challenge.starterHTML ?? null,
+        previewError: false,
       });
     }
   },
@@ -213,7 +227,15 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
   resetCode: () => {
     const { challenge } = get();
     if (challenge) {
-      set({ userCode: challenge.starterCode, testResults: null, testError: null, testErrorLine: null, allTestsPassed: false });
+      set({
+        userCode: challenge.starterCode,
+        testResults: null,
+        testError: null,
+        testErrorLine: null,
+        allTestsPassed: false,
+        previewHTML: challenge.starterHTML ?? null,
+        previewError: false,
+      });
     }
   },
 
@@ -236,6 +258,13 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
     } else {
       set({ completedSteps: completed });
     }
+  },
+
+  setPreviewHTML: (html) => set({ previewHTML: html, previewError: false }),
+
+  resetPreview: () => {
+    const { challenge } = get();
+    set({ previewHTML: challenge?.starterHTML ?? null, previewError: true });
   },
 
   reset: () =>
@@ -263,5 +292,7 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
       allTestsPassed: false,
       challengeCompleted: false,
       attempts: 0,
+      previewHTML: null,
+      previewError: false,
     }),
 }));
